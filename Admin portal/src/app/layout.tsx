@@ -1,0 +1,22 @@
+import type { Metadata } from "next";
+import "./globals.css";
+
+export const metadata: Metadata = {
+  title: "Acadsphere | Administrative Command Center",
+  description: "Administrative console of Acadsphere. Oversee events feeds, internship boards, e-library documents, normal admin privileges, and user accounts logs.",
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html
+      lang="en"
+      className="font-sans h-full antialiased"
+    >
+      <body className="min-h-full flex flex-col">{children}</body>
+    </html>
+  );
+}
