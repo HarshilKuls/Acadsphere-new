@@ -1,5 +1,0 @@
-{
-  "installCommand": "cd audience-portal && npm install",
-  "buildCommand": "cd audience-portal && npm run build",
-  "outputDirectory": "audience-portal/.next"
-}
