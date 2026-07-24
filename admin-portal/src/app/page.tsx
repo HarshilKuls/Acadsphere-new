@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import { 
   LayoutDashboard, 
   Code2, 
@@ -765,7 +766,7 @@ export default function Home() {
               
               <div className="glass-card rounded-2xl p-5 text-center">
                 <span className="block text-[10px] font-bold text-zinc-500 uppercase mb-1">Ecosystem Students</span>
-                <span className="text-4xl font-extrabold text-[#7C3AED] tracking-tight">1,248</span>
+                <span className="text-4xl font-extrabold text-[#7C3AED] tracking-tight">{registeredUsers.length}</span>
               </div>
               
               <div className="glass-card rounded-2xl p-5 text-center">
@@ -816,6 +817,11 @@ export default function Home() {
                       </button>
                     </div>
                   ))}
+                  {reportedAccounts.length === 0 && (
+                    <div className="text-center text-xs text-zinc-500 p-4 border border-dashed border-zinc-800/40 rounded-xl">
+                      No pending reports. System secure.
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -846,6 +852,11 @@ export default function Home() {
                       </div>
                     </div>
                   ))}
+                  {adminsList.length === 0 && (
+                    <div className="text-center text-xs text-zinc-500 p-4 border border-dashed border-zinc-800/40 rounded-xl">
+                      No admin mapping found.
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1020,6 +1031,11 @@ export default function Home() {
                     </div>
                   </div>
                 ))}
+                {eventsFeed.length === 0 && (
+                  <div className="text-center text-xs text-zinc-500 py-8 border border-dashed border-zinc-800/40 rounded-xl">
+                    No active ecosystem events published.
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1185,6 +1201,11 @@ export default function Home() {
                     </div>
                   </div>
                 ))}
+                {internshipsFeed.length === 0 && (
+                  <div className="text-center text-xs text-zinc-500 py-8 border border-dashed border-zinc-800/40 rounded-xl">
+                    No active internship listings available.
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1336,6 +1357,11 @@ export default function Home() {
                     </div>
                   </div>
                 ))}
+                {libraryFeed.length === 0 && (
+                  <div className="text-center text-xs text-zinc-500 py-8 border border-dashed border-zinc-800/40 rounded-xl">
+                    No digital library resources added.
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1659,6 +1685,11 @@ export default function Home() {
                         </div>
                       </div>
                     ))}
+                    {adminsList.length === 0 && (
+                      <div className="text-center text-xs text-zinc-500 py-6 border border-dashed border-zinc-800/40 rounded-xl">
+                        No administrators mapped.
+                      </div>
+                    )}
                   </div>
                 </div>
               </>
@@ -1917,11 +1948,18 @@ export default function Home() {
                       setActiveTab(tab.label);
                       setIsSidebarOpen(false);
                     }}
-                    className={`relative w-full flex items-center gap-3.5 px-4 py-2.5 text-xs font-semibold rounded-lg transition-all ${isActive ? (isDarkMode ? "bg-zinc-800 text-white" : "bg-white text-zinc-950 shadow-sm border border-zinc-200") : "text-zinc-500 hover:text-zinc-200 hover:bg-zinc-850/10"}`}
+                    className={`relative z-0 w-full flex items-center gap-3.5 px-4 py-2.5 text-xs font-semibold rounded-lg transition-all ${isActive ? (isDarkMode ? "text-white" : "text-zinc-950") : "text-zinc-500 hover:text-zinc-200 hover:bg-zinc-850/10"}`}
                   >
-                    {isActive && <div className="sidebar-indicator" />}
-                    <Icon className={`h-4.5 w-4.5 transition-colors ${isActive ? "text-[#06B6D4]" : "text-zinc-500"}`} />
-                    <span>{tab.label}</span>
+                    {isActive && (
+                      <motion.div
+                        layoutId="admin-sidebar-highlight"
+                        className={`absolute inset-0 rounded-lg -z-10 ${isDarkMode ? "bg-zinc-800" : "bg-white shadow-sm border border-zinc-200"}`}
+                        transition={{ type: "spring", stiffness: 350, damping: 30 }}
+                      />
+                    )}
+                    {isActive && <div className="sidebar-indicator z-0" />}
+                    <Icon className={`relative z-10 h-4.5 w-4.5 transition-colors ${isActive ? "text-[#06B6D4]" : "text-zinc-500"}`} />
+                    <span className="relative z-10">{tab.label}</span>
                   </button>
                 );
               })}

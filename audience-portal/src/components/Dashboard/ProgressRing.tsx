@@ -3,15 +3,14 @@ import React from "react";
 interface ProgressRingProps {
   score: number;
   status: "Safe" | "Warning" | "Critical";
+  xpGained: number;
+  momentum: number;
 }
 
-export default function ProgressRing({ score, status }: ProgressRingProps) {
+export default function ProgressRing({ score, status, xpGained, momentum }: ProgressRingProps) {
   const radius = 82;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (score / 100) * circumference;
-
-  const xpGained = Math.round(score * 12.5 + 400);
-  const momentum = status === "Safe" ? 12 : status === "Warning" ? 5 : 2;
 
   return (
     <div className="lg:col-span-4 glass-card flex flex-col justify-between items-center relative overflow-hidden p-5">

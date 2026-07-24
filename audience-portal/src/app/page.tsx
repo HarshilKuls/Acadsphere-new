@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
+import { motion } from "framer-motion";
 import { 
   LayoutDashboard, 
   CalendarClock, 
@@ -1527,18 +1528,20 @@ export default function Home() {
 
   // Apply trigger functions
   const applyForInternship = (id: string, company: string, role: string, applyLink?: string) => {
-    if (appliedInternships.includes(id)) return;
-    setAppliedInternships([...appliedInternships, id]);
-    triggerToast(`Application submitted to ${company} for ${role}!`);
+    if (!appliedInternships.includes(id)) {
+      setAppliedInternships([...appliedInternships, id]);
+      triggerToast(`Application submitted to ${company} for ${role}!`);
+    }
     if (applyLink && applyLink !== "#" && applyLink.trim() !== "") {
       window.open(applyLink, "_blank", "noopener,noreferrer");
     }
   };
 
   const applyForEvent = (id: string, title: string, applyLink?: string) => {
-    if (appliedEvents.includes(id)) return;
-    setAppliedEvents([...appliedEvents, id]);
-    triggerToast(`Registered successfully for ${title}!`);
+    if (!appliedEvents.includes(id)) {
+      setAppliedEvents([...appliedEvents, id]);
+      triggerToast(`Registered successfully for ${title}!`);
+    }
     if (applyLink && applyLink !== "#" && applyLink.trim() !== "") {
       window.open(applyLink, "_blank", "noopener,noreferrer");
     }
@@ -1596,7 +1599,7 @@ export default function Home() {
   // PRIMARY WEB APPLICATION VIEW PORTAL
   // ----------------------------------------------------
   return (
-    <div className={`min-h-screen font-sans transition-colors duration-300 bg-background text-foreground ${isDarkMode ? 'dark' : ''}`}>
+    <div className={`min-h-screen font-sans transition-colors duration-300 bg-[var(--bg)] text-[var(--on-surface)] ${isDarkMode ? 'dark' : ''}`}>
       {/* Toast Alert Banner */}
       {toastMessage && (
         <div className="fixed bottom-6 left-6 z-50 rounded-xl glass-panel border border-[#7C3AED]/40 bg-[#7C3AED]/10 px-4 py-3 text-xs font-semibold text-white shadow-xl shadow-black/30 flex items-center gap-2 animate-bounce">
@@ -1655,11 +1658,20 @@ export default function Home() {
                     setIsSidebarOpen(false);
                   }}
                   className={`nav-item ${isActive ? "active" : ""}`}
+                  style={{ zIndex: 0 }}
                 >
-                  <span className="material-symbols-outlined" style={{ fontVariationSettings: isActive || tab.fill ? "'FILL' 1" : "'FILL' 0" }}>
+                  {isActive && (
+                    <motion.div
+                      layoutId="audience-sidebar-highlight"
+                      className="absolute inset-0 bg-[var(--violet-20)] rounded-md"
+                      style={{ zIndex: -1 }}
+                      transition={{ type: "spring", stiffness: 350, damping: 30 }}
+                    />
+                  )}
+                  <span className="material-symbols-outlined relative z-10" style={{ fontVariationSettings: isActive || tab.fill ? "'FILL' 1" : "'FILL' 0" }}>
                     {tab.icon}
                   </span>
-                  <span>{tab.label}</span>
+                  <span className="relative z-10">{tab.label}</span>
                 </button>
               );
             })}
@@ -1684,11 +1696,20 @@ export default function Home() {
                     setIsSidebarOpen(false);
                   }}
                   className={`nav-item ${isActive ? "active" : ""}`}
+                  style={{ zIndex: 0 }}
                 >
-                  <span className="material-symbols-outlined">
+                  {isActive && (
+                    <motion.div
+                      layoutId="audience-sidebar-highlight"
+                      className="absolute inset-0 bg-[var(--violet-20)] rounded-md"
+                      style={{ zIndex: -1 }}
+                      transition={{ type: "spring", stiffness: 350, damping: 30 }}
+                    />
+                  )}
+                  <span className="material-symbols-outlined relative z-10">
                     {tab.icon}
                   </span>
-                  <span>{tab.label}</span>
+                  <span className="relative z-10">{tab.label}</span>
                 </button>
               );
             })}
@@ -1785,6 +1806,8 @@ export default function Home() {
                 libraryFeed={libraryFeed}
                 setActiveTab={setActiveTab}
                 triggerToast={triggerToast}
+                totalXp={(timetable.length * 50) + (attendance.length * 20) + (cgpaSubjects.length * 100) + (calendarEvents.length * 10) + (predictions.length * 10)}
+                momentum={cumulativeAttendancePercent > 75 ? 12 : cumulativeAttendancePercent > 60 ? 5 : 2}
               />
             )}
 
@@ -1918,7 +1941,7 @@ export default function Home() {
                             >
                               <div>
                                 <span className="text-xs font-bold block truncate">{item.subject}</span>
-                                <span className="text-[9px] opacity-80 block truncate">Room: {item.room} â€¢ {item.faculty}</span>
+                                <span className="text-[9px] opacity-80 block truncate">Room: {item.room} &bull; {item.faculty}</span>
                               </div>
 
                               <div className="flex items-center justify-between mt-2 pt-2 border-t border-current/10">
@@ -2627,7 +2650,7 @@ export default function Home() {
                       <div key={ev.id} className="flex items-center justify-between p-2.5 border border-zinc-800 rounded-lg bg-zinc-900/10">
                         <div>
                           <span className="text-xs font-bold text-white block truncate max-w-[120px]">{ev.title}</span>
-                          <span className="text-[9px] text-zinc-500 block font-semibold">{ev.date} â€¢ {ev.type}</span>
+                          <span className="text-[9px] text-zinc-500 block font-semibold">{ev.date} &bull; {ev.type}</span>
                         </div>
                         <div className="flex items-center gap-1">
                           <button
@@ -2737,7 +2760,7 @@ export default function Home() {
                         onClick={() => applyForEvent(ev.id, ev.title, ev.applyLink)}
                         className={`w-full rounded-lg py-2.5 text-xs font-bold transition-all border ${appliedEvents.includes(ev.id) ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400 font-bold" : "bg-[#7C3AED] hover:bg-[#6D28D9] border-transparent text-white active:scale-95"}`}
                       >
-                        {appliedEvents.includes(ev.id) ? "Registration Confirmed âœ“" : "Register to Network"}
+                        {appliedEvents.includes(ev.id) ? "Registration Confirmed ✓" : "Register to Network"}
                       </button>
                     </div>
                   </div>
@@ -2818,7 +2841,7 @@ export default function Home() {
                       onClick={() => applyForInternship(item.id, item.company, item.role, item.applyLink)}
                       className={`w-full rounded-lg py-2.5 text-xs font-bold transition-all border ${appliedInternships.includes(item.id) ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400 font-bold" : "bg-[#7C3AED] hover:bg-[#6D28D9] border-transparent text-white active:scale-95"}`}
                     >
-                      {appliedInternships.includes(item.id) ? "Application Transmitted âœ“" : "Apply Instantly"}
+                      {appliedInternships.includes(item.id) ? "Application Transmitted ✓" : "Apply Instantly"}
                     </button>
 
                   </div>
@@ -2883,7 +2906,7 @@ export default function Home() {
                       </div>
 
                       <h4 className="text-sm font-extrabold text-white leading-snug tracking-tight mb-2">{item.title}</h4>
-                      <p className="text-[11px] text-zinc-400 font-semibold">{item.subject} â€¢ {item.semester}</p>
+                      <p className="text-[11px] text-zinc-400 font-semibold">{item.subject} &bull; {item.semester}</p>
                     </div>
 
                     <button 

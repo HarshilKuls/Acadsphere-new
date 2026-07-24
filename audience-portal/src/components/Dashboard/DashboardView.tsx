@@ -24,21 +24,32 @@ interface DashboardViewProps {
   libraryFeed: LibraryItem[];
   setActiveTab: (tab: string) => void;
   triggerToast: (msg: string) => void;
+  totalXp: number;
+  momentum: number;
 }
 
 export default function DashboardView({
   currentUser, todaysClasses, healthData, currentDayName, overallCGPA, eventsFeed,
-  nextClass, cumulativeAttendancePercent, calendarEvents, internshipsFeed,
-  libraryFeed, setActiveTab, triggerToast
+  nextClass, cumulativeAttendancePercent, timetable, calendarEvents, internshipsFeed,
+  libraryFeed, setActiveTab, triggerToast, totalXp, momentum
 }: DashboardViewProps) {
   
+  const badgesData = [
+    { id: '1', name: 'First Steps', description: 'Added first timetable entry', requirement: 'Add 1 class', rarity: 'Common', earned: timetable.length > 0, icon: GraduationCap as any },
+    { id: '2', name: 'Perfect Attendance', description: '100% attendance', requirement: '100% avg attendance', rarity: 'Legendary', earned: cumulativeAttendancePercent === 100 && overallCGPA > 0, icon: Award as any },
+    { id: '3', name: 'Top Scholar', description: 'CGPA > 9.0', requirement: 'CGPA > 9.0', rarity: 'Epic', earned: overallCGPA > 9.0, icon: Star as any },
+    { id: '4', name: 'Active Participant', description: 'Logged 5 events', requirement: '5 calendar events', rarity: 'Uncommon', earned: calendarEvents.length >= 5, icon: Target as any }
+  ];
+  const earnedBadgesCount = badgesData.filter(b => b.earned).length;
+  const badgeProgressPercent = Math.round((earnedBadgesCount / badgesData.length) * 100);
+
   return (
     <div className="space-y-4 sm:space-y-6 animate-fadeIn">
       
       {/* ─── ZONE A: ACT ─── */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         <HeroGreeting currentUser={currentUser} todaysClasses={todaysClasses} healthScore={healthData.score} />
-        <ProgressRing score={healthData.score} status={healthData.status} />
+        <ProgressRing score={healthData.score} status={healthData.status} xpGained={totalXp} momentum={momentum} />
         <FlightPath todaysClasses={todaysClasses} currentDayName={currentDayName} />
         <UpNextStack nextClass={nextClass} eventsFeed={eventsFeed} onViewEvents={() => setActiveTab("Events / Network")} />
       </section>
@@ -142,8 +153,13 @@ export default function DashboardView({
             
             <div className="flex flex-wrap gap-1.5 mt-4">
               {Array.from({ length: 30 }).map((_, idx) => {
-                const weights = [1, 2, 4, 3, 2, 1, 3, 4, 2, 3, 1, 4, 4, 2, 3, 1, 2, 3, 4, 2, 1, 3, 4, 2, 1, 4, 3, 2, 4, 3];
-                const w = weights[idx] || 1;
+                // Calculate real momentum from calendar events in the last 30 days
+                const date = new Date();
+                date.setDate(date.getDate() - (29 - idx));
+                const dateString = date.toISOString().split('T')[0];
+                const eventsOnDay = calendarEvents.filter(e => e.date === dateString).length;
+                
+                const w = eventsOnDay === 0 ? 1 : eventsOnDay === 1 ? 2 : eventsOnDay === 2 ? 3 : 4;
                 return (
                   <div 
                     key={idx} 
@@ -153,7 +169,7 @@ export default function DashboardView({
                       w === 3 ? "bg-[var(--accent)]/70 text-white" :
                       "bg-[var(--accent)] text-white shadow-[0_0_8px_var(--accent-glow)]"
                     }`}
-                    title={`Day ${idx + 1}: Weight ${w}`}
+                    title={`Day ${idx + 1}: ${eventsOnDay} activities`}
                   >
                     {idx + 1}
                   </div>
@@ -183,10 +199,10 @@ export default function DashboardView({
                 <span className="text-[10px] font-bold text-[var(--muted)] uppercase">Current Status</span>
                 <div className="flex items-center gap-2 mt-1.5">
                   <div className="h-7 w-7 rounded bg-[var(--accent-20)] text-[var(--accent-hover)] flex items-center justify-center font-extrabold text-xs">
-                    {Math.floor(healthData.score / 20) + 1}
+                    {Math.floor(totalXp / 500) + 1}
                   </div>
                   <span className="text-sm font-extrabold text-[var(--foreground)]">
-                    {healthData.score >= 80 ? "Scholar" : healthData.score >= 50 ? "Specialist" : "Novice"}
+                    {totalXp >= 1500 ? "Scholar" : totalXp >= 500 ? "Specialist" : "Novice"}
                   </span>
                 </div>
               </div>
@@ -197,19 +213,19 @@ export default function DashboardView({
 
             <div className="mt-4">
               <span className="text-[10px] font-bold text-[var(--muted)] uppercase">Total XP</span>
-              <span className="text-2xl font-black block text-[var(--foreground)]">{Math.round(healthData.score * 85 + 200)}</span>
+              <span className="text-2xl font-black block text-[var(--foreground)]">{totalXp}</span>
             </div>
 
             <div className="mt-4 space-y-1.5">
               <div className="flex justify-between text-[10px] text-[var(--muted)]">
-                <span>Progress to Level {Math.floor(healthData.score / 20) + 2}</span>
-                <span>{(healthData.score % 20) * 5}%</span>
+                <span>Progress to Level {Math.floor(totalXp / 500) + 2}</span>
+                <span>{Math.round((totalXp % 500) / 5)}%</span>
               </div>
               <div className="h-2 bg-[var(--surface-top)] rounded-full overflow-hidden">
-                <div className="h-full bg-[var(--accent)] rounded-full" style={{ width: `${(healthData.score % 20) * 5}%` }} />
+                <div className="h-full bg-[var(--accent)] rounded-full" style={{ width: `${Math.round((totalXp % 500) / 5)}%` }} />
               </div>
               <span className="text-[9px] text-[var(--muted)] block">
-                {1000 - Math.round(healthData.score * 8.5)} XP remaining
+                {500 - (totalXp % 500)} XP remaining
               </span>
             </div>
           </div>
@@ -266,14 +282,18 @@ export default function DashboardView({
           <div className="bg-[var(--surface-low)] border border-[var(--outline-dim)] rounded-xl p-5 md:col-span-1 flex flex-col justify-between">
             <span className="text-[10px] font-bold text-[var(--muted)] uppercase">Badge Progress</span>
             <div className="mt-4">
-              <span className="text-sm font-bold text-[var(--foreground)]">No badge activity yet</span>
-              <div className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--surface-top)]" />
+              <span className="text-sm font-bold text-[var(--foreground)]">
+                {earnedBadgesCount === 0 ? "No badge activity yet" : `${earnedBadgesCount} / ${badgesData.length} badges earned`}
+              </span>
+              <div className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--surface-top)]">
+                <div className="h-full rounded-full bg-[var(--accent)] transition-all duration-700" style={{ width: `${badgeProgressPercent}%` }} />
+              </div>
             </div>
             <p className="mt-4 text-[10px] leading-relaxed text-[var(--muted)]">Earn badges as you complete milestones across Acadsphere.</p>
           </div>
 
         </div>
-        <MilestoneBadges badges={[]} />
+        <MilestoneBadges badges={badgesData} />
       </section>
 
       {/* ─── ZONE D: EXPLORE ─── */}

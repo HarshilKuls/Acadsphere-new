@@ -147,3 +147,5 @@ input:focus, select:focus, textarea:focus {
   background: var(--accent);
   box-shadow: 0 0 8px var(--accent);
 }
+
+button, a, .tab, .dropdown-item, .menu-item, [role='tab'], [role='button'] { transition: all 0.2s ease-out; }
