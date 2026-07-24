@@ -35,10 +35,10 @@ export default function DashboardView({
 }: DashboardViewProps) {
   
   const badgesData = [
-    { id: '1', name: 'First Steps', description: 'Added first timetable entry', requirement: 'Add 1 class', rarity: 'Common', earned: timetable.length > 0, icon: GraduationCap as any },
-    { id: '2', name: 'Perfect Attendance', description: '100% attendance', requirement: '100% avg attendance', rarity: 'Legendary', earned: cumulativeAttendancePercent === 100 && overallCGPA > 0, icon: Award as any },
-    { id: '3', name: 'Top Scholar', description: 'CGPA > 9.0', requirement: 'CGPA > 9.0', rarity: 'Epic', earned: overallCGPA > 9.0, icon: Star as any },
-    { id: '4', name: 'Active Participant', description: 'Logged 5 events', requirement: '5 calendar events', rarity: 'Uncommon', earned: calendarEvents.length >= 5, icon: Target as any }
+    { id: '1', name: 'First Steps', description: 'Added first timetable entry', requirement: 'Add 1 class', rarity: 'Common' as const, earned: timetable.length > 0, icon: GraduationCap as any },
+    { id: '2', name: 'Perfect Attendance', description: '100% attendance', requirement: '100% avg attendance', rarity: 'Legendary' as const, earned: cumulativeAttendancePercent === 100 && overallCGPA > 0, icon: Award as any },
+    { id: '3', name: 'Top Scholar', description: 'CGPA > 9.0', requirement: 'CGPA > 9.0', rarity: 'Epic' as const, earned: overallCGPA > 9.0, icon: Star as any },
+    { id: '4', name: 'Active Participant', description: 'Logged 5 events', requirement: '5 calendar events', rarity: 'Uncommon' as const, earned: calendarEvents.length >= 5, icon: Target as any }
   ];
   const earnedBadgesCount = badgesData.filter(b => b.earned).length;
   const badgeProgressPercent = Math.round((earnedBadgesCount / badgesData.length) * 100);
