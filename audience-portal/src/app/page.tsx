@@ -44,6 +44,7 @@ import Hero from "@/components/homepage/Hero";
 import Footer from "@/components/homepage/Footer";
 import DashboardView from "@/components/Dashboard/DashboardView";
 import OnboardingView from "@/components/Onboarding/OnboardingView";
+import TimetableUpload from "@/components/Dashboard/TimetableUpload";
 
 export default function Home() {
   type AuthUserProfile = {
@@ -162,6 +163,9 @@ export default function Home() {
   // Opportunity Radar
   const [radarFieldFilter, setRadarFieldFilter] = useState("All Fields");
   const [radarTypeFilter, setRadarTypeFilter] = useState("All Types");
+
+  // Timetable Upload
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
   // Notifications Toast helper
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -1216,6 +1220,35 @@ export default function Home() {
     triggerToast("Class schedule removed.");
   };
 
+  // Timetable Upload — import extracted entries from Gemini
+  const handleImportExtracted = (entries: { subject: string; faculty: string; room: string; day: string; startTime: string; endTime: string }[]) => {
+    if (!currentUser) return;
+    const colors = [
+      "bg-purple-600/20 text-purple-400 border-purple-500/20",
+      "bg-cyan-600/20 text-cyan-400 border-cyan-500/20",
+      "bg-emerald-600/20 text-emerald-400 border-emerald-500/20",
+      "bg-amber-600/20 text-amber-400 border-amber-500/20",
+      "bg-rose-600/20 text-rose-400 border-rose-500/20"
+    ];
+    const newEntries: TimetableEntry[] = [];
+    entries.forEach((e, i) => {
+      const entry = db.saveTimetableEntry({
+        userId: currentUser.id,
+        subject: e.subject,
+        faculty: e.faculty,
+        room: e.room,
+        day: e.day,
+        startTime: e.startTime,
+        endTime: e.endTime,
+        color: colors[i % colors.length]
+      });
+      newEntries.push(entry);
+    });
+    setTimetable(prev => [...prev, ...newEntries]);
+    setIsUploadModalOpen(false);
+    triggerToast(`Imported ${newEntries.length} timetable entries!`);
+  };
+
   // Attendance CRUD
   const handleAddAttendance = (e: React.FormEvent) => {
     e.preventDefault();
@@ -1819,9 +1852,17 @@ export default function Home() {
             
             {/* Input Schedule Form */}
             <div className="glass-card rounded-2xl p-5">
-              <h3 className="text-xs font-bold tracking-wide text-zinc-500 uppercase mb-4 flex items-center gap-1.5">
-                <Plus className="h-4 w-4 text-[#7C3AED]" /> Log Course Schedule
-              </h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xs font-bold tracking-wide text-zinc-500 uppercase flex items-center gap-1.5">
+                  <Plus className="h-4 w-4 text-[#7C3AED]" /> Log Course Schedule
+                </h3>
+                <button
+                  onClick={() => setIsUploadModalOpen(true)}
+                  className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-purple-600 to-cyan-500 px-3.5 py-2 text-[10px] font-bold text-white shadow-md hover:shadow-lg transition-all active:scale-95"
+                >
+                  <Sparkles className="h-3.5 w-3.5" /> Upload Timetable (AI)
+                </button>
+              </div>
 
               <form onSubmit={handleAddTimetable} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
                 <div>
@@ -1979,6 +2020,16 @@ export default function Home() {
 
               </div>
             </div>
+
+            {/* AI Upload Modal */}
+            {isUploadModalOpen && (
+              <TimetableUpload
+                isDarkMode={isDarkMode}
+                onImport={handleImportExtracted}
+                onClose={() => setIsUploadModalOpen(false)}
+                triggerToast={triggerToast}
+              />
+            )}
 
           </div>
         )}
