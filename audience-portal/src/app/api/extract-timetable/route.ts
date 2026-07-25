@@ -184,6 +184,23 @@ export async function POST(request: NextRequest) {
   } catch (error: unknown) {
     console.error("Timetable extraction error:", error);
     const message = error instanceof Error ? error.message : "An unexpected error occurred.";
+
+    // Detect quota/rate-limit errors from Gemini
+    if (message.includes("429") || message.toLowerCase().includes("quota") || message.toLowerCase().includes("rate")) {
+      return NextResponse.json(
+        { error: "Gemini API quota exceeded. Please wait a minute and try again, or check your plan at ai.google.dev." },
+        { status: 429 }
+      );
+    }
+
+    // Detect invalid API key errors
+    if (message.includes("401") || message.includes("403") || message.toLowerCase().includes("api key")) {
+      return NextResponse.json(
+        { error: "Gemini API key is invalid or expired. Please update GEMINI_API_KEY in your environment variables." },
+        { status: 401 }
+      );
+    }
+
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
