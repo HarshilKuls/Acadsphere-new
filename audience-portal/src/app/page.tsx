@@ -92,6 +92,7 @@ export default function Home() {
   // --- UI Layout States ---
   const [activeTab, setActiveTab] = useState<string>("Dashboard");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   useEffect(() => {
     const closeSidebarOnEscape = (event: KeyboardEvent) => {
@@ -1642,7 +1643,7 @@ export default function Home() {
       )}
 
       {/* App Shell */}
-      <div className="app-shell">
+      <div className={`app-shell ${isSidebarCollapsed ? "sidebar-collapsed" : ""}`}>
         {isSidebarOpen && (
           <button
             type="button"
@@ -1653,7 +1654,7 @@ export default function Home() {
         )}
         
         {/* SIDEBAR */}
-        <aside id="app-sidebar" className={`sidebar ${isSidebarOpen ? "is-open" : ""}`}>
+        <aside id="app-sidebar" className={`sidebar ${isSidebarOpen ? "is-open" : ""} ${isSidebarCollapsed ? "collapsed" : ""}`}>
           <button onClick={() => setIsSidebarOpen(false)} className="sidebar-close lg:hidden" aria-label="Close sidebar">
             <span className="material-symbols-outlined">close</span>
           </button>
@@ -1692,6 +1693,7 @@ export default function Home() {
                   }}
                   className={`nav-item ${isActive ? "active" : ""}`}
                   style={{ zIndex: 0 }}
+                  data-tooltip={tab.label}
                 >
                   {isActive && (
                     <motion.div
@@ -1730,6 +1732,7 @@ export default function Home() {
                   }}
                   className={`nav-item ${isActive ? "active" : ""}`}
                   style={{ zIndex: 0 }}
+                  data-tooltip={tab.label}
                 >
                   {isActive && (
                     <motion.div
@@ -1751,11 +1754,24 @@ export default function Home() {
               onClick={handleSignOut}
               className="nav-item text-red-500 hover:bg-red-500/10"
               style={{ marginTop: '8px' }}
+              data-tooltip="Log Out"
             >
               <span className="material-symbols-outlined">logout</span>
               <span>Log Out</span>
             </button>
           </div>
+
+          {/* Collapse Toggle Button */}
+          <button
+            onClick={() => setIsSidebarCollapsed(prev => !prev)}
+            className="sidebar-collapse-btn"
+            title={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            <span className="material-symbols-outlined">
+              {isSidebarCollapsed ? "chevron_right" : "chevron_left"}
+            </span>
+            <span>Collapse</span>
+          </button>
         </aside>
 
         {/* MAIN WRAPPER */}
