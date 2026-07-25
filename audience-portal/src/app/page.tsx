@@ -1635,7 +1635,7 @@ export default function Home() {
     <div className={`min-h-screen font-sans transition-colors duration-300 bg-[var(--bg)] text-[var(--on-surface)] ${isDarkMode ? 'dark' : ''}`}>
       {/* Toast Alert Banner */}
       {toastMessage && (
-        <div className="fixed bottom-6 left-6 z-50 rounded-xl glass-panel border border-[#7C3AED]/40 bg-[#7C3AED]/10 px-4 py-3 text-xs font-semibold text-white shadow-xl shadow-black/30 flex items-center gap-2 animate-bounce">
+        <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-[200] rounded-xl border border-[#7C3AED]/40 px-5 py-3 text-xs font-semibold shadow-xl flex items-center gap-2 animate-bounce ${isDarkMode ? 'bg-[#1a1625] text-white shadow-black/30' : 'bg-white text-zinc-800 shadow-zinc-300/50'}`}>
           <Sparkles className="h-4 w-4 text-[#06B6D4]" />
           <span>{toastMessage}</span>
         </div>
