@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenAI } from "@google/genai";
+import Groq from "groq-sdk";
 import crypto from "crypto";
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
+
+// Groq vision model for multimodal timetable extraction
+const GROQ_MODEL = "meta-llama/llama-4-scout-17b-16e-instruct";
 
 // Structured prompt for timetable extraction
 const EXTRACTION_PROMPT = `You are a timetable extraction assistant. Analyze the uploaded file (it may be a PDF, image of a timetable, spreadsheet, or document) and extract ALL class/lecture entries.
@@ -27,24 +30,6 @@ Example output format:
   {"subject": "Computer Networks", "faculty": "Dr. Smith", "room": "Lab-304", "day": "Monday", "startTime": "09:00", "endTime": "10:00"},
   {"subject": "Data Structures", "faculty": "Prof. Johnson", "room": "Room-201", "day": "Tuesday", "startTime": "11:00", "endTime": "12:30"}
 ]`;
-
-// Map MIME types for Gemini
-function getGeminiMimeType(fileName: string, originalType: string): string {
-  const ext = fileName.toLowerCase().split(".").pop() || "";
-  const mimeMap: Record<string, string> = {
-    pdf: "application/pdf",
-    png: "image/png",
-    jpg: "image/jpeg",
-    jpeg: "image/jpeg",
-    webp: "image/webp",
-    doc: "application/msword",
-    docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    xls: "application/vnd.ms-excel",
-    csv: "text/csv",
-  };
-  return mimeMap[ext] || originalType || "application/octet-stream";
-}
 
 // Validate extracted entries
 interface ExtractedEntry {
@@ -74,16 +59,28 @@ function validateEntry(entry: ExtractedEntry): ExtractedEntry | null {
   };
 }
 
+// Map file extension to MIME type for base64 data URL
+function resolveMimeType(fileName: string, originalType: string): string {
+  const ext = fileName.toLowerCase().split(".").pop() || "";
+  const mimeMap: Record<string, string> = {
+    pdf: "application/pdf",
+    png: "image/png",
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    webp: "image/webp",
+  };
+  return mimeMap[ext] || originalType || "image/png";
+}
+
 // --- SERVER-SIDE RATE LIMITING & CACHING ---
 const CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes
 const extractionCache = new Map<string, { entries: ExtractedEntry[]; timestamp: number }>();
 
-const MAX_RPM = 12; // Stay safely under Gemini Free Tier's 15 RPM limit
+const MAX_RPM = 25; // Groq free tier is more generous than Gemini
 const requestTimestamps: number[] = [];
 
 function isRateLimited(): boolean {
   const now = Date.now();
-  // Filter timestamps within last 60 seconds
   while (requestTimestamps.length > 0 && requestTimestamps[0] < now - 60000) {
     requestTimestamps.shift();
   }
@@ -94,18 +91,27 @@ function recordRequest(): void {
   requestTimestamps.push(Date.now());
 }
 
-// Exponential backoff helper for Gemini API calls
-async function generateContentWithRetry(ai: GoogleGenAI, params: any, maxRetries = 3) {
+// Exponential backoff helper for Groq API calls
+async function chatWithRetry(
+  groq: Groq,
+  params: Parameters<typeof groq.chat.completions.create>[0],
+  maxRetries = 3
+): Promise<Groq.Chat.ChatCompletion> {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      return await ai.models.generateContent(params);
-    } catch (err: any) {
+      return (await groq.chat.completions.create(params)) as Groq.Chat.ChatCompletion;
+    } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : String(err);
-      const is429 = errMsg.includes("429") || err?.status === 429 || errMsg.toLowerCase().includes("quota") || errMsg.toLowerCase().includes("rate");
-      
-      if (is429 && attempt < maxRetries) {
-        const backoffMs = Math.pow(2, attempt) * 1500 + Math.floor(Math.random() * 500); // 3s, 6s jittered
-        console.warn(`[Gemini API] 429 Rate Limit hit. Retrying in ${backoffMs}ms (Attempt ${attempt}/${maxRetries})...`);
+      const isRateError =
+        errMsg.includes("429") ||
+        errMsg.toLowerCase().includes("rate") ||
+        errMsg.toLowerCase().includes("quota");
+
+      if (isRateError && attempt < maxRetries) {
+        const backoffMs = Math.pow(2, attempt) * 1500 + Math.floor(Math.random() * 500);
+        console.warn(
+          `[Groq API] Rate limit hit. Retrying in ${backoffMs}ms (Attempt ${attempt}/${maxRetries})...`
+        );
         await new Promise((resolve) => setTimeout(resolve, backoffMs));
       } else {
         throw err;
@@ -118,9 +124,9 @@ async function generateContentWithRetry(ai: GoogleGenAI, params: any, maxRetries
 export async function POST(request: NextRequest) {
   try {
     // 1. Validate API key
-    if (!GEMINI_API_KEY) {
+    if (!GROQ_API_KEY) {
       return NextResponse.json(
-        { error: "Gemini API key is not configured. Please add GEMINI_API_KEY to environment variables." },
+        { error: "Groq API key is not configured. Please add GROQ_API_KEY to environment variables." },
         { status: 500 }
       );
     }
@@ -152,12 +158,12 @@ export async function POST(request: NextRequest) {
     // 4. Check server-side RPM limit guard
     if (isRateLimited()) {
       return NextResponse.json(
-        { error: "Server rate limit guard reached (12 RPM). Please wait 10 seconds before trying again." },
+        { error: "Server rate limit reached. Please wait 10 seconds before trying again." },
         { status: 429 }
       );
     }
 
-    // 5. Validate file size (base64 string ~1.33x original; limit to ~10MB original)
+    // 5. Validate file size
     const estimatedSize = (fileData.length * 3) / 4;
     if (estimatedSize > 15 * 1024 * 1024) {
       return NextResponse.json(
@@ -166,39 +172,54 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 6. Determine MIME type & record request timestamp
-    const resolvedMime = getGeminiMimeType(fileName, mimeType);
+    // 6. Check supported file type (Groq vision supports images and PDFs)
+    const ext = fileName.toLowerCase().split(".").pop() || "";
+    const supportedExts = ["png", "jpg", "jpeg", "webp", "pdf"];
+    if (!supportedExts.includes(ext)) {
+      return NextResponse.json(
+        {
+          error: `File type .${ext} is not supported for AI extraction. Please upload an image (PNG, JPG, WebP) or PDF.`,
+        },
+        { status: 400 }
+      );
+    }
+
+    // 7. Resolve MIME type & record request
+    const resolvedMime = resolveMimeType(fileName, mimeType);
     recordRequest();
 
-    // 7. Call Gemini API with Exponential Backoff Retries
-    const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+    // 8. Call Groq API with vision model
+    const groq = new Groq({ apiKey: GROQ_API_KEY });
 
-    const response = await generateContentWithRetry(ai, {
-      model: "gemini-2.0-flash",
-      contents: [
+    const response = await chatWithRetry(groq, {
+      model: GROQ_MODEL,
+      messages: [
         {
           role: "user",
-          parts: [
+          content: [
             {
-              inlineData: {
-                mimeType: resolvedMime,
-                data: fileData,
+              type: "image_url",
+              image_url: {
+                url: `data:${resolvedMime};base64,${fileData}`,
               },
             },
             {
+              type: "text",
               text: EXTRACTION_PROMPT,
             },
           ],
         },
       ],
+      temperature: 0.1,
+      max_completion_tokens: 4096,
     });
 
-    // 8. Parse Gemini response
-    const rawText = response.text?.trim() || "";
-    
+    // 9. Parse Groq response
+    const rawText = response.choices?.[0]?.message?.content?.trim() || "";
+
     if (!rawText) {
       return NextResponse.json(
-        { error: "Gemini returned an empty response. The file may not contain a readable timetable." },
+        { error: "AI returned an empty response. The file may not contain a readable timetable." },
         { status: 422 }
       );
     }
@@ -213,7 +234,7 @@ export async function POST(request: NextRequest) {
     try {
       parsed = JSON.parse(jsonText);
     } catch {
-      console.error("Gemini response was not valid JSON:", rawText.substring(0, 500));
+      console.error("Groq response was not valid JSON:", rawText.substring(0, 500));
       return NextResponse.json(
         { error: "Could not parse the AI response. Please try again or use a clearer timetable image." },
         { status: 422 }
@@ -227,7 +248,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 9. Validate and clean entries
+    // 10. Validate and clean entries
     const validEntries = parsed
       .map(validateEntry)
       .filter((e): e is ExtractedEntry => e !== null);
@@ -239,7 +260,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 10. Cache valid entries
+    // 11. Cache valid entries
     extractionCache.set(fileHash, {
       entries: validEntries,
       timestamp: Date.now(),
@@ -250,23 +271,22 @@ export async function POST(request: NextRequest) {
       totalExtracted: parsed.length,
       totalValid: validEntries.length,
     });
-
   } catch (error: unknown) {
     console.error("Timetable extraction error:", error);
     const message = error instanceof Error ? error.message : "An unexpected error occurred.";
 
-    // Detect quota/rate-limit errors from Gemini
-    if (message.includes("429") || message.toLowerCase().includes("quota") || message.toLowerCase().includes("rate")) {
+    // Detect rate-limit errors from Groq
+    if (message.includes("429") || message.toLowerCase().includes("rate") || message.toLowerCase().includes("quota")) {
       return NextResponse.json(
-        { error: "Gemini API quota exceeded. Please wait a minute and try again, or check your plan at ai.google.dev." },
+        { error: "AI API rate limit reached. Please wait a minute and try again." },
         { status: 429 }
       );
     }
 
-    // Detect invalid API key errors
-    if (message.includes("401") || message.includes("403") || message.toLowerCase().includes("api key")) {
+    // Detect auth errors
+    if (message.includes("401") || message.includes("403") || message.toLowerCase().includes("api key") || message.toLowerCase().includes("authentication")) {
       return NextResponse.json(
-        { error: "Gemini API key is invalid or expired. Please update GEMINI_API_KEY in your environment variables." },
+        { error: "Groq API key is invalid or expired. Please update GROQ_API_KEY in your environment variables." },
         { status: 401 }
       );
     }
@@ -274,4 +294,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
-
