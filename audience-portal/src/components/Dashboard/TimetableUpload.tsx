@@ -228,7 +228,7 @@ export default function TimetableUpload({ isDarkMode, onImport, onClose, trigger
                 AI Timetable Extractor
               </h2>
               <p className={`text-[10px] ${isDarkMode ? "text-zinc-500" : "text-zinc-400"}`}>
-                Upload your timetable file — Gemini AI will extract the schedule
+                Upload your timetable file — AI will extract the schedule
               </p>
             </div>
           </div>
@@ -273,7 +273,7 @@ export default function TimetableUpload({ isDarkMode, onImport, onClose, trigger
                     </div>
                     <div>
                       <p className={`text-sm font-bold ${isDarkMode ? "text-zinc-200" : "text-zinc-800"}`}>
-                        Extracting with Gemini AI...
+                        Extracting with Groq AI...
                       </p>
                       <p className={`text-[11px] mt-1 ${isDarkMode ? "text-zinc-500" : "text-zinc-400"}`}>
                         Analyzing {selectedFile?.name} — this may take a few seconds

@@ -5,7 +5,7 @@ import crypto from "crypto";
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 
 // Groq vision model for multimodal timetable extraction
-const GROQ_MODEL = "meta-llama/llama-4-scout-17b-16e-instruct";
+const GROQ_MODEL = "llama-3.2-11b-vision-preview";
 
 // Structured prompt for timetable extraction
 const EXTRACTION_PROMPT = `You are a timetable extraction assistant. Analyze the uploaded file (it may be a PDF, image of a timetable, spreadsheet, or document) and extract ALL class/lecture entries.
