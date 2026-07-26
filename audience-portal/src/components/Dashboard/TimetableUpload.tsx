@@ -63,6 +63,7 @@ export default function TimetableUpload({ isDarkMode, onImport, onClose, trigger
   };
 
   const handleFile = useCallback(async (file: File) => {
+    if (isExtracting) return;
     setError(null);
 
     // Validate type

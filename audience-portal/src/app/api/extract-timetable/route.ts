@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenAI } from "@google/genai";
+import crypto from "crypto";
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
@@ -73,6 +74,47 @@ function validateEntry(entry: ExtractedEntry): ExtractedEntry | null {
   };
 }
 
+// --- SERVER-SIDE RATE LIMITING & CACHING ---
+const CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes
+const extractionCache = new Map<string, { entries: ExtractedEntry[]; timestamp: number }>();
+
+const MAX_RPM = 12; // Stay safely under Gemini Free Tier's 15 RPM limit
+const requestTimestamps: number[] = [];
+
+function isRateLimited(): boolean {
+  const now = Date.now();
+  // Filter timestamps within last 60 seconds
+  while (requestTimestamps.length > 0 && requestTimestamps[0] < now - 60000) {
+    requestTimestamps.shift();
+  }
+  return requestTimestamps.length >= MAX_RPM;
+}
+
+function recordRequest(): void {
+  requestTimestamps.push(Date.now());
+}
+
+// Exponential backoff helper for Gemini API calls
+async function generateContentWithRetry(ai: GoogleGenAI, params: any, maxRetries = 3) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await ai.models.generateContent(params);
+    } catch (err: any) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      const is429 = errMsg.includes("429") || err?.status === 429 || errMsg.toLowerCase().includes("quota") || errMsg.toLowerCase().includes("rate");
+      
+      if (is429 && attempt < maxRetries) {
+        const backoffMs = Math.pow(2, attempt) * 1500 + Math.floor(Math.random() * 500); // 3s, 6s jittered
+        console.warn(`[Gemini API] 429 Rate Limit hit. Retrying in ${backoffMs}ms (Attempt ${attempt}/${maxRetries})...`);
+        await new Promise((resolve) => setTimeout(resolve, backoffMs));
+      } else {
+        throw err;
+      }
+    }
+  }
+  throw new Error("Maximum retry attempts exceeded.");
+}
+
 export async function POST(request: NextRequest) {
   try {
     // 1. Validate API key
@@ -94,7 +136,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 3. Validate file size (base64 string ~1.33x original; limit to ~10MB original)
+    // 3. Check duplicate request cache (SHA-256 hash of file content)
+    const fileHash = crypto.createHash("sha256").update(fileData).digest("hex");
+    const cached = extractionCache.get(fileHash);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+      console.log(`[Cache Hit] Returning cached timetable for ${fileName}`);
+      return NextResponse.json({
+        entries: cached.entries,
+        totalExtracted: cached.entries.length,
+        totalValid: cached.entries.length,
+        cached: true,
+      });
+    }
+
+    // 4. Check server-side RPM limit guard
+    if (isRateLimited()) {
+      return NextResponse.json(
+        { error: "Server rate limit guard reached (12 RPM). Please wait 10 seconds before trying again." },
+        { status: 429 }
+      );
+    }
+
+    // 5. Validate file size (base64 string ~1.33x original; limit to ~10MB original)
     const estimatedSize = (fileData.length * 3) / 4;
     if (estimatedSize > 15 * 1024 * 1024) {
       return NextResponse.json(
@@ -103,13 +166,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 4. Determine MIME type
+    // 6. Determine MIME type & record request timestamp
     const resolvedMime = getGeminiMimeType(fileName, mimeType);
+    recordRequest();
 
-    // 5. Call Gemini API
+    // 7. Call Gemini API with Exponential Backoff Retries
     const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 
-    const response = await ai.models.generateContent({
+    const response = await generateContentWithRetry(ai, {
       model: "gemini-2.0-flash",
       contents: [
         {
@@ -129,7 +193,7 @@ export async function POST(request: NextRequest) {
       ],
     });
 
-    // 6. Parse Gemini response
+    // 8. Parse Gemini response
     const rawText = response.text?.trim() || "";
     
     if (!rawText) {
@@ -163,7 +227,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 7. Validate and clean entries
+    // 9. Validate and clean entries
     const validEntries = parsed
       .map(validateEntry)
       .filter((e): e is ExtractedEntry => e !== null);
@@ -174,6 +238,12 @@ export async function POST(request: NextRequest) {
         { status: 422 }
       );
     }
+
+    // 10. Cache valid entries
+    extractionCache.set(fileHash, {
+      entries: validEntries,
+      timestamp: Date.now(),
+    });
 
     return NextResponse.json({
       entries: validEntries,
@@ -204,3 +274,4 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
+
