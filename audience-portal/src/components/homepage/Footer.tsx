@@ -1,7 +1,7 @@
 import React from 'react';
 
 export default function Footer() {
-  const adminPortalUrl = process.env.NEXT_PUBLIC_ADMIN_PORTAL_URL || 'http://localhost:3001';
+  const adminPortalUrl = process.env.NEXT_PUBLIC_ADMIN_PORTAL_URL || 'https://acadsphere-adminportal.vercel.app/';
 
   return (
     <footer className="bg-zinc-100/50 dark:bg-[#14121b]/40 border-t border-zinc-200 dark:border-zinc-800/40 w-full py-6 mt-auto">
