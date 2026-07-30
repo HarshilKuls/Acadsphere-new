@@ -86,6 +86,17 @@ export default function Home() {
   const [editYear, setEditYear] = useState("I Year");
   const [isSavingProfile, setIsSavingProfile] = useState(false);
 
+  // Auth provider check (to hide Change Password for Google users)
+  const [authProvider, setAuthProvider] = useState<string | null>(null);
+
+  // Change Password Modal States
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [changeCurrentPassword, setChangeCurrentPassword] = useState("");
+  const [changeNewPassword, setChangeNewPassword] = useState("");
+  const [changeConfirmNewPassword, setChangeConfirmNewPassword] = useState("");
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [passwordUpdateError, setPasswordUpdateError] = useState<string | null>(null);
+
   // --- Theme State ---
   const [isDarkMode, setIsDarkMode] = useState(true);
 
@@ -114,6 +125,10 @@ export default function Home() {
   const [ttEnd, setTtEnd] = useState("10:00");
   const [ttEditingId, setTtEditingId] = useState<string | null>(null);
   const [ttEditingColor, setTtEditingColor] = useState("bg-purple-600/20 text-purple-400 border-purple-500/20");
+
+  // Clear All Timetable States
+  const [isClearAllModalOpen, setIsClearAllModalOpen] = useState(false);
+  const [isClearingTimetable, setIsClearingTimetable] = useState(false);
 
   // Attendance
   const [attendance, setAttendance] = useState<AttendanceEntry[]>([]);
@@ -309,6 +324,8 @@ export default function Home() {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         const email = session.user.email || "";
+        const provider = session.user.app_metadata?.provider || (session.user.app_metadata?.providers?.[0]) || "email";
+        setAuthProvider(provider);
         
         // 1. Check if admin
         const { data: isAdmin } = await supabase
@@ -356,6 +373,8 @@ export default function Home() {
       console.log("Supabase Auth State Change Event:", event);
       if (session?.user) {
         const email = session.user.email || "";
+        const provider = session.user.app_metadata?.provider || (session.user.app_metadata?.providers?.[0]) || "email";
+        setAuthProvider(provider);
 
         // Check if admin
         const { data: isAdmin } = await supabase
@@ -367,6 +386,7 @@ export default function Home() {
         if (isAdmin) {
           setAuthError("This account is an Administrator. Please log in through the Admin Portal.");
           setCurrentUser(null);
+          setAuthProvider(null);
           localStorage.removeItem("acadsphere_session");
           await supabase.auth.signOut();
           return;
@@ -375,6 +395,7 @@ export default function Home() {
         if (await db.isEmailBanned(email)) {
           setIsBannedView(true);
           setCurrentUser(null);
+          setAuthProvider(null);
           await supabase.auth.signOut();
           return;
         }
@@ -394,6 +415,7 @@ export default function Home() {
         }
       } else if (event === 'SIGNED_OUT') {
         setCurrentUser(null);
+        setAuthProvider(null);
         localStorage.removeItem("acadsphere_session");
       }
     });
@@ -620,6 +642,18 @@ export default function Home() {
     }
 
     try {
+      // Check rate limit on student login
+      const rlCheck = await fetch("/api/auth/rate-limit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "login", email: email.toLowerCase() }),
+      });
+      const rlData = await rlCheck.json();
+      if (!rlCheck.ok) {
+        setAuthError(rlData.error || "Too many login attempts. Please try again later.");
+        return;
+      }
+
       console.log("Starting Supabase login for:", email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.toLowerCase(),
@@ -667,6 +701,18 @@ export default function Home() {
       return;
     }
     try {
+      // Check rate limit on student password reset
+      const rlCheck = await fetch("/api/auth/rate-limit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "password_reset", email: email.toLowerCase() }),
+      });
+      const rlData = await rlCheck.json();
+      if (!rlCheck.ok) {
+        setAuthError(rlData.error || "Too many attempts. Please try again later.");
+        return;
+      }
+
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/`,
       });
@@ -781,6 +827,63 @@ export default function Home() {
       setIsSavingProfile(false);
     }
   };
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentUser) return;
+    setPasswordUpdateError(null);
+
+    if (!changeCurrentPassword || !changeNewPassword || !changeConfirmNewPassword) {
+      setPasswordUpdateError("All fields are required.");
+      return;
+    }
+
+    if (changeNewPassword.length < 6) {
+      setPasswordUpdateError("New password must be at least 6 characters long.");
+      return;
+    }
+
+    if (changeNewPassword !== changeConfirmNewPassword) {
+      setPasswordUpdateError("New passwords do not match.");
+      return;
+    }
+
+    setIsUpdatingPassword(true);
+    try {
+      // 1. Re-authenticate user to verify current password
+      const { error: reauthError } = await supabase.auth.signInWithPassword({
+        email: currentUser.email,
+        password: changeCurrentPassword
+      });
+
+      if (reauthError) {
+        setPasswordUpdateError("Incorrect current password.");
+        setIsUpdatingPassword(false);
+        return;
+      }
+
+      // 2. Perform the update
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: changeNewPassword
+      });
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      // Success!
+      triggerToast("Password updated successfully!");
+      setIsChangePasswordOpen(false);
+      setChangeCurrentPassword("");
+      setChangeNewPassword("");
+      setChangeConfirmNewPassword("");
+    } catch (err: any) {
+      setPasswordUpdateError(err.message || "Failed to update password.");
+    } finally {
+      setIsUpdatingPassword(false);
+    }
+  };
+
 
   // Hydration Guard
   if (!mounted) {
@@ -1219,6 +1322,25 @@ export default function Home() {
       setTtRoom("");
     }
     triggerToast("Class schedule removed.");
+  };
+
+  const handleClearAllTimetable = async () => {
+    if (!currentUser) return;
+    setIsClearingTimetable(true);
+    try {
+      db.clearAllTimetable(currentUser.id);
+      setTimetable([]);
+      setTtEditingId(null);
+      setTtSubject("");
+      setTtFaculty("");
+      setTtRoom("");
+      setIsClearAllModalOpen(false);
+      triggerToast("Weekly lecture timetable cleared successfully.");
+    } catch (err: any) {
+      triggerToast("Failed to clear timetable.");
+    } finally {
+      setIsClearingTimetable(false);
+    }
   };
 
   // Timetable Upload — import extracted entries from Gemini
@@ -1780,9 +1902,15 @@ export default function Home() {
           {/* TOP NAV */}
           <header className="top-nav">
             <button
-              onClick={() => setIsSidebarOpen(true)}
-              className="icon-btn ham-btn lg:hidden"
-              aria-label="Open sidebar"
+              onClick={() => {
+                if (typeof window !== "undefined" && window.innerWidth >= 1024) {
+                  setIsSidebarCollapsed(prev => !prev);
+                } else {
+                  setIsSidebarOpen(prev => !prev);
+                }
+              }}
+              className="icon-btn ham-btn"
+              aria-label="Toggle sidebar"
               aria-controls="app-sidebar"
               aria-expanded={isSidebarOpen}
             >
@@ -1970,7 +2098,18 @@ export default function Home() {
 
             {/* Weekly Timetable Grid Board */}
             <div className="glass-card rounded-2xl p-5 overflow-x-auto">
-              <h3 className="text-xs font-bold tracking-wide text-zinc-500 uppercase mb-6">Weekly Lecture Grid</h3>
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xs font-bold tracking-wide text-zinc-500 uppercase">Weekly Lecture Grid</h3>
+                {timetable.length > 0 && (
+                  <button
+                    onClick={() => setIsClearAllModalOpen(true)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-500/20 bg-red-500/5 hover:bg-red-500/10 text-red-400 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Clear All
+                  </button>
+                )}
+              </div>
               
               <div className="min-w-[800px] grid grid-cols-6 gap-4">
                 
@@ -3177,6 +3316,29 @@ export default function Home() {
                 </button>
               </div>
             </div>
+            {authProvider !== "google" && (
+              <div className="glass-card p-6 space-y-4">
+                <h3 className="text-sm font-bold tracking-wide text-zinc-500 uppercase">Change Password</h3>
+                <div className="flex items-center justify-between py-2">
+                  <div className="flex flex-col">
+                    <span className="text-xs font-bold">Update Account Security</span>
+                    <span className="text-[10px] text-zinc-500 mt-0.5">Modify your password securely using Supabase Auth.</span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setChangeCurrentPassword("");
+                      setChangeNewPassword("");
+                      setChangeConfirmNewPassword("");
+                      setPasswordUpdateError(null);
+                      setIsChangePasswordOpen(true);
+                    }}
+                    className="px-4 py-2 text-xs font-bold bg-[#7c5cff] hover:bg-[#6D28D9] text-white rounded-lg transition-all"
+                  >
+                    Change Password
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -3230,6 +3392,189 @@ export default function Home() {
             </div>
           </div>
         )}
+
+      {/* Change Password Modal */}
+      {isChangePasswordOpen && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setIsChangePasswordOpen(false)}
+          />
+
+          {/* Modal */}
+          <div
+            className={`relative w-full max-w-md overflow-hidden rounded-2xl border shadow-2xl flex flex-col ${
+              isDarkMode
+                ? "bg-[#14121b] border-zinc-800 shadow-purple-500/5 text-zinc-100"
+                : "bg-white border-zinc-200 shadow-purple-500/10 text-zinc-900"
+            }`}
+          >
+            {/* Header */}
+            <div className={`flex items-center justify-between p-5 border-b ${isDarkMode ? "border-zinc-800" : "border-zinc-200"}`}>
+              <div className="flex items-center gap-3">
+                <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-purple-600 to-cyan-500 flex items-center justify-center">
+                  <span className="material-symbols-outlined text-white">lock</span>
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold">Change Password</h2>
+                  <p className={`text-[10px] ${isDarkMode ? "text-zinc-500" : "text-zinc-400"}`}>
+                    Update your account security settings
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsChangePasswordOpen(false)}
+                className={`h-8 w-8 rounded-lg flex items-center justify-center transition-all ${
+                  isDarkMode ? "hover:bg-zinc-800 text-zinc-400" : "hover:bg-zinc-100 text-zinc-500"
+                }`}
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handlePasswordChange}>
+              {/* Body */}
+              <div className="p-5 space-y-4">
+                {passwordUpdateError && (
+                  <div className={`flex items-start gap-2.5 rounded-lg border p-3 text-xs ${
+                    isDarkMode ? "border-red-500/20 bg-red-500/5 text-red-400" : "border-red-200 bg-red-50 text-red-600"
+                  }`}>
+                    <span className="material-symbols-outlined text-red-500 select-none">error</span>
+                    <span>{passwordUpdateError}</span>
+                  </div>
+                )}
+
+                <div className="space-y-1">
+                  <label className="text-[10px] uppercase font-bold text-zinc-400">Current Password</label>
+                  <input
+                    type="password"
+                    value={changeCurrentPassword}
+                    onChange={e => setChangeCurrentPassword(e.target.value)}
+                    placeholder="Enter current password"
+                    className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] uppercase font-bold text-zinc-400">New Password</label>
+                  <input
+                    type="password"
+                    value={changeNewPassword}
+                    onChange={e => setChangeNewPassword(e.target.value)}
+                    placeholder="At least 6 characters"
+                    className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] uppercase font-bold text-zinc-400">Confirm New Password</label>
+                  <input
+                    type="password"
+                    value={changeConfirmNewPassword}
+                    onChange={e => setChangeConfirmNewPassword(e.target.value)}
+                    placeholder="Re-enter new password"
+                    className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
+                  />
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className={`flex items-center justify-end gap-2.5 p-4 border-t ${isDarkMode ? "border-zinc-800" : "border-zinc-200"}`}>
+                <button
+                  type="button"
+                  onClick={() => setIsChangePasswordOpen(false)}
+                  className={`rounded-lg border px-4 py-2 text-xs font-bold transition-all ${
+                    isDarkMode
+                      ? "border-zinc-700 text-zinc-400 hover:bg-zinc-800"
+                      : "border-zinc-300 text-zinc-500 hover:bg-zinc-100"
+                  }`}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isUpdatingPassword}
+                  className="rounded-lg bg-gradient-to-r from-purple-600 to-cyan-500 px-5 py-2 text-xs font-bold text-white shadow-md hover:shadow-lg transition-all active:scale-95 disabled:opacity-40"
+                >
+                  {isUpdatingPassword ? "Updating..." : "Update Password"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Clear All Timetable Confirmation Modal */}
+      {isClearAllModalOpen && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setIsClearAllModalOpen(false)}
+          />
+
+          {/* Modal */}
+          <div
+            className={`relative w-full max-w-sm overflow-hidden rounded-2xl border shadow-2xl flex flex-col ${
+              isDarkMode
+                ? "bg-[#14121b] border-zinc-800 shadow-red-500/5 text-zinc-100"
+                : "bg-white border-zinc-200 shadow-red-500/10 text-zinc-900"
+            }`}
+          >
+            {/* Header */}
+            <div className={`flex items-center justify-between p-5 border-b ${isDarkMode ? "border-zinc-800" : "border-zinc-200"}`}>
+              <div className="flex items-center gap-3">
+                <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-red-650 to-orange-500 flex items-center justify-center">
+                  <span className="material-symbols-outlined text-white">warning</span>
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold">Clear Timetable?</h2>
+                  <p className={`text-[10px] ${isDarkMode ? "text-zinc-500" : "text-zinc-400"}`}>
+                    This action cannot be undone
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsClearAllModalOpen(false)}
+                className={`h-8 w-8 rounded-lg flex items-center justify-center transition-all ${
+                  isDarkMode ? "hover:bg-zinc-800 text-zinc-400" : "hover:bg-zinc-100 text-zinc-500"
+                }`}
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-5 text-xs text-zinc-400 leading-relaxed">
+              Are you sure you want to clear your entire weekly lecture timetable? This will permanently delete all your schedule blocks from the database.
+            </div>
+
+            {/* Footer */}
+            <div className={`flex items-center justify-end gap-2.5 p-4 border-t ${isDarkMode ? "border-zinc-800" : "border-zinc-200"}`}>
+              <button
+                type="button"
+                onClick={() => setIsClearAllModalOpen(false)}
+                className={`rounded-lg border px-4 py-2 text-xs font-bold transition-all ${
+                  isDarkMode
+                    ? "border-zinc-700 text-zinc-400 hover:bg-zinc-800"
+                    : "border-zinc-300 text-zinc-500 hover:bg-zinc-100"
+                }`}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleClearAllTimetable}
+                disabled={isClearingTimetable}
+                className="rounded-lg bg-red-600 hover:bg-red-700 px-5 py-2 text-xs font-bold text-white shadow-md transition-all active:scale-95 disabled:opacity-40"
+              >
+                {isClearingTimetable ? "Clearing..." : "Clear Timetable"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       </main>
     </div>

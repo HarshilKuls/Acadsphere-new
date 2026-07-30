@@ -387,7 +387,17 @@ body {
   z-index: 50;
   transition: background .4s ease, border-color .4s ease;
   box-shadow: 4px 0 24px rgba(0, 0, 0, 0.03);
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  scroll-behavior: smooth;
 }
+
+.sidebar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
 
 html:not(.dark) .sidebar {
   border-right: 1px solid rgba(180, 170, 200, 0.4);
@@ -595,7 +605,11 @@ html:not(.dark) .logo-full-image {
 /* ─── Collapsed Sidebar ─── */
 .sidebar {
   transition: width .3s cubic-bezier(.2, 1, .3, 1), padding .3s ease, background .4s ease, border-color .4s ease;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  scroll-behavior: smooth;
 }
 
 .sidebar.collapsed {

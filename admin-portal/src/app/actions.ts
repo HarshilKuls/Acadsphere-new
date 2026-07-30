@@ -3,16 +3,19 @@
 import { createClient } from '@supabase/supabase-js';
 import { hashPassword } from '../lib/db';
 
-export async function registerAdminAction(formData: {
-  fullName: string;
-  email: string;
-  role: 'Master Admin' | 'Normal Admin';
-  permissions: {
-    manageContent: boolean;
-    manageUsers: boolean;
-  };
-  passwordPlain: string;
-}) {
+export async function registerAdminAction(
+  adminToken: string,
+  formData: {
+    fullName: string;
+    email: string;
+    role: 'Master Admin' | 'Normal Admin';
+    permissions: {
+      manageContent: boolean;
+      manageUsers: boolean;
+    };
+    passwordPlain: string;
+  }
+) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -30,6 +33,28 @@ export async function registerAdminAction(formData: {
       persistSession: false
     }
   });
+
+  // Verify administrator token and role
+  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(adminToken);
+  if (authError || !user) {
+    return {
+      success: false,
+      error: "Access Denied: Unauthenticated admin user."
+    };
+  }
+
+  const { data: adminRecord, error: adminError } = await supabaseAdmin
+    .from('admins')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+
+  if (adminError || !adminRecord || adminRecord.role !== 'Master Admin') {
+    return {
+      success: false,
+      error: "Access Denied: Master Admin privileges required to create administrators."
+    };
+  }
 
   // 1. Create user in auth.users
   const { data, error } = await supabaseAdmin.auth.admin.createUser({

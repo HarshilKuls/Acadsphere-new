@@ -149,3 +149,16 @@ input:focus, select:focus, textarea:focus {
 }
 
 button, a, .tab, .dropdown-item, .menu-item, [role='tab'], [role='button'] { transition: all 0.2s ease-out; }
+
+/* Custom scrollable sidebar helper */
+.admin-sidebar {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+  scroll-behavior: smooth !important;
+}
+.admin-sidebar::-webkit-scrollbar {
+  display: none !important;
+}
+

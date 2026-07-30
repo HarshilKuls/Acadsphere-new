@@ -24,7 +24,8 @@ import {
   Lock,
   PlusCircle,
   CalendarDays,
-  MessageSquare
+  MessageSquare,
+  AlertCircle
 } from "lucide-react";
 import { adminDb, hashPassword, supabase, AdminAccount, EventEntry, InternshipEntry, LibraryResource, ReportedAccount, NonConfidentialUser, HolidayEntry, FeedbackEntry } from "@/lib/db";
 import { registerAdminAction } from "./actions";
@@ -117,6 +118,14 @@ export default function Home() {
   const [newAdminRole, setNewAdminRole] = useState<'Normal Admin' | 'Master Admin'>('Normal Admin');
   const [permContent, setPermContent] = useState(true);
   const [permUsers, setPermUsers] = useState(false);
+
+  // Change Password Modal States (Admin Portal)
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [changeCurrentPassword, setChangeCurrentPassword] = useState("");
+  const [changeNewPassword, setChangeNewPassword] = useState("");
+  const [changeConfirmNewPassword, setChangeConfirmNewPassword] = useState("");
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [passwordUpdateError, setPasswordUpdateError] = useState<string | null>(null);
 
   // Client init
   useEffect(() => {
@@ -633,10 +642,12 @@ export default function Home() {
       triggerToast("All parameters required.");
       return;
     }
-
     try {
       triggerToast("Registering administrator account...");
-      const res = await registerAdminAction({
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token || "";
+
+      const res = await registerAdminAction(token, {
         fullName: newAdminName,
         email: newAdminEmail,
         role: newAdminRole,
@@ -661,6 +672,62 @@ export default function Home() {
       }
     } catch (error: any) {
       triggerToast(error.message || "An unexpected error occurred during admin registration.");
+    }
+  };
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentAdmin) return;
+    setPasswordUpdateError(null);
+
+    if (!changeCurrentPassword || !changeNewPassword || !changeConfirmNewPassword) {
+      setPasswordUpdateError("All fields are required.");
+      return;
+    }
+
+    if (changeNewPassword.length < 6) {
+      setPasswordUpdateError("New password must be at least 6 characters long.");
+      return;
+    }
+
+    if (changeNewPassword !== changeConfirmNewPassword) {
+      setPasswordUpdateError("New passwords do not match.");
+      return;
+    }
+
+    setIsUpdatingPassword(true);
+    try {
+      // 1. Re-authenticate admin to verify current password
+      const { error: reauthError } = await supabase.auth.signInWithPassword({
+        email: currentAdmin.email,
+        password: changeCurrentPassword
+      });
+
+      if (reauthError) {
+        setPasswordUpdateError("Incorrect current password.");
+        setIsUpdatingPassword(false);
+        return;
+      }
+
+      // 2. Perform the update
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: changeNewPassword
+      });
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      // Success!
+      triggerToast("Password updated successfully!");
+      setIsChangePasswordOpen(false);
+      setChangeCurrentPassword("");
+      setChangeNewPassword("");
+      setChangeConfirmNewPassword("");
+    } catch (err: any) {
+      setPasswordUpdateError(err.message || "Failed to update password.");
+    } finally {
+      setIsUpdatingPassword(false);
     }
   };
 
@@ -1896,6 +1963,30 @@ export default function Home() {
               </div>
             </div>
 
+            <div className="glass-card rounded-2xl p-5 space-y-4">
+              <h3 className="text-xs font-bold tracking-wide text-zinc-500 uppercase flex items-center gap-1.5">
+                <Sliders className="h-4 w-4 text-[#06B6D4]" /> Administrative Security Settings
+              </h3>
+              <div className="flex items-center justify-between py-2">
+                <div className="flex flex-col">
+                  <span className="text-xs font-bold text-white">Change Account Password</span>
+                  <span className="text-[10px] text-zinc-500 mt-0.5">Modify your admin portal credentials securely.</span>
+                </div>
+                <button
+                  onClick={() => {
+                    setChangeCurrentPassword("");
+                    setChangeNewPassword("");
+                    setChangeConfirmNewPassword("");
+                    setPasswordUpdateError(null);
+                    setIsChangePasswordOpen(true);
+                  }}
+                  className="px-4 py-2 text-xs font-bold bg-[#7C3AED] hover:bg-[#6D28D9] text-white rounded-lg transition-all"
+                >
+                  Change Password
+                </button>
+              </div>
+            </div>
+
           </div>
         )}
 
@@ -1904,7 +1995,7 @@ export default function Home() {
       {/* ----------------------------------------------------
           RIGHT SIDEBAR FOR ADMINISTRATIVE HUB
           ---------------------------------------------------- */}
-      <nav className={`fixed top-0 bottom-0 right-0 z-40 w-64 border-l transition-all duration-300 ${isSidebarOpen ? "translate-x-0" : "translate-x-full"} lg:translate-x-0 ${isDarkMode ? "border-l-zinc-800 bg-[#111113]" : "border-l-zinc-200 bg-[#F4F4F5]"}`}>
+      <nav className={`fixed top-0 bottom-0 right-0 z-40 w-64 border-l transition-all duration-300 admin-sidebar ${isSidebarOpen ? "translate-x-0" : "translate-x-full"} lg:translate-x-0 ${isDarkMode ? "border-l-zinc-800 bg-[#111113]" : "border-l-zinc-200 bg-[#F4F4F5]"}`}>
         
         <div className="flex h-full flex-col justify-between py-6">
           
@@ -1980,6 +2071,119 @@ export default function Home() {
         </div>
 
       </nav>
+
+      {/* Change Password Modal */}
+      {isChangePasswordOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setIsChangePasswordOpen(false)}
+          />
+
+          {/* Modal */}
+          <div
+            className={`relative w-full max-w-md overflow-hidden rounded-2xl border shadow-2xl flex flex-col ${
+              isDarkMode
+                ? "bg-[#121214] border-zinc-800 shadow-purple-500/5 text-zinc-100"
+                : "bg-white border-zinc-250 shadow-purple-500/10 text-zinc-900"
+            }`}
+          >
+            {/* Header */}
+            <div className={`flex items-center justify-between p-5 border-b ${isDarkMode ? "border-zinc-800" : "border-zinc-200"}`}>
+              <div className="flex items-center gap-3">
+                <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-purple-600 to-cyan-500 flex items-center justify-center">
+                  <Lock className="h-4.5 w-4.5 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold">Change Password</h2>
+                  <p className={`text-[10px] ${isDarkMode ? "text-zinc-500" : "text-zinc-400"}`}>
+                    Update your admin portal security credentials
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsChangePasswordOpen(false)}
+                className={`h-8 w-8 rounded-lg flex items-center justify-center transition-all ${
+                  isDarkMode ? "hover:bg-zinc-800 text-zinc-400" : "hover:bg-zinc-100 text-zinc-500"
+                }`}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handlePasswordChange}>
+              {/* Body */}
+              <div className="p-5 space-y-4">
+                {passwordUpdateError && (
+                  <div className={`flex items-start gap-2.5 rounded-lg border p-3 text-xs ${
+                    isDarkMode ? "border-red-500/20 bg-red-500/5 text-red-400" : "border-red-200 bg-red-50 text-red-600"
+                  }`}>
+                    <AlertCircle className="h-4 w-4 text-red-500 flex-shrink-0 mt-0.5" />
+                    <span>{passwordUpdateError}</span>
+                  </div>
+                )}
+
+                <div className="space-y-1">
+                  <label className="text-[10px] uppercase font-bold text-zinc-400">Current Password</label>
+                  <input
+                    type="password"
+                    value={changeCurrentPassword}
+                    onChange={e => setChangeCurrentPassword(e.target.value)}
+                    placeholder="Enter current password"
+                    className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#18181b] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] uppercase font-bold text-zinc-400">New Password</label>
+                  <input
+                    type="password"
+                    value={changeNewPassword}
+                    onChange={e => setChangeNewPassword(e.target.value)}
+                    placeholder="At least 6 characters"
+                    className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#18181b] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] uppercase font-bold text-zinc-400">Confirm Password</label>
+                  <input
+                    type="password"
+                    value={changeConfirmNewPassword}
+                    onChange={e => setChangeConfirmNewPassword(e.target.value)}
+                    placeholder="Re-enter new password"
+                    className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#18181b] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
+                  />
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className={`flex items-center justify-end gap-2.5 p-4 border-t ${isDarkMode ? "border-zinc-800" : "border-zinc-200"}`}>
+                <button
+                  type="button"
+                  onClick={() => setIsChangePasswordOpen(false)}
+                  className={`rounded-lg border px-4 py-2 text-xs font-bold transition-all ${
+                    isDarkMode
+                      ? "border-zinc-700 text-zinc-400 hover:bg-zinc-800"
+                      : "border-zinc-300 text-zinc-500 hover:bg-zinc-100"
+                  }`}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isUpdatingPassword}
+                  className="rounded-lg bg-gradient-to-r from-[#7C3AED] to-[#06B6D4] px-5 py-2 text-xs font-bold text-white shadow-md hover:shadow-lg transition-all active:scale-95 disabled:opacity-40"
+                >
+                  {isUpdatingPassword ? "Updating..." : "Update Password"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
     </div>
   );

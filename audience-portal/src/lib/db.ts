@@ -254,6 +254,12 @@ export const db = {
     supabase.from('timetable').delete().eq('id', id).then();
   },
 
+  clearAllTimetable: (userId: string): void => {
+    const entries = getStorageItem<TimetableEntry[]>('acadsphere_timetable', []);
+    setStorageItem('acadsphere_timetable', entries.filter(e => e.userId !== userId));
+    supabase.from('timetable').delete().eq('user_id', userId).then();
+  },
+
   // --- Attendance API ---
   getAttendance: (userId: string): AttendanceEntry[] => {
     const entries = getStorageItem<AttendanceEntry[]>('acadsphere_attendance', []);

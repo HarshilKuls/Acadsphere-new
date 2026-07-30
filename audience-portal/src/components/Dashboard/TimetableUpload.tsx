@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback } from "react";
 import { Upload, FileText, X, Check, AlertCircle, Loader2, Sparkles, Trash2, Image as ImageIcon } from "lucide-react";
+import { supabase } from "../../lib/db";
 
 interface ExtractedEntry {
   subject: string;
@@ -63,7 +64,6 @@ export default function TimetableUpload({ isDarkMode, onImport, onClose, trigger
   };
 
   const handleFile = useCallback(async (file: File) => {
-    if (isExtracting) return;
     setError(null);
 
     // Validate type
@@ -98,10 +98,17 @@ export default function TimetableUpload({ isDarkMode, onImport, onClose, trigger
         reader.readAsDataURL(file);
       });
 
+      // Fetch current session access token
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token || "";
+
       // Send to API
       const response = await fetch("/api/extract-timetable", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
         body: JSON.stringify({
           fileData: base64,
           fileName: file.name,
