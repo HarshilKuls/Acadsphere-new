@@ -4,6 +4,11 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Acadsphere | Administrative Command Center",
   description: "Administrative console of Acadsphere. Oversee events feeds, internship boards, e-library documents, normal admin privileges, and user accounts logs.",
+  icons: {
+    icon: "/icon.png",
+    shortcut: "/icon.png",
+    apple: "/icon.png",
+  },
 };
 
 export default function RootLayout({
