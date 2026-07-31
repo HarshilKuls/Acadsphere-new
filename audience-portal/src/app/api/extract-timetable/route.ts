@@ -3,7 +3,8 @@ import { HfInference } from "@huggingface/inference";
 import { createClient } from "@supabase/supabase-js";
 import crypto from "crypto";
 
-const HUGGINGFACE_API_KEY = process.env.HUGGINGFACE_API_KEY;
+const HUGGINGFACE_API_KEY = process.env.HUGGINGFACE_API_KEY || process.env.HUGGING_FACE || process.env.HUGGINGFACE;
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || process.env.OPENROUTER;
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co";
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder-key";
 
@@ -380,7 +381,7 @@ function cleanAndParseJSON(rawText: string): ExtractedEntry[] {
 
 // OpenRouter Vision AI Helper (Google Gemma 4 26B & NVIDIA Nemotron VL)
 async function extractWithOpenRouterVision(fileData: string, mimeType: string, fileName: string): Promise<ExtractedEntry[] | null> {
-  const apiKey = process.env.OPENROUTER_API_KEY;
+  const apiKey = OPENROUTER_API_KEY;
   if (!apiKey) return null;
 
   const candidateModels = [
@@ -560,7 +561,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 2. Validate API key configuration
-    if (!HUGGINGFACE_API_KEY && !process.env.OPENROUTER_API_KEY) {
+    if (!HUGGINGFACE_API_KEY && !OPENROUTER_API_KEY) {
       return NextResponse.json(
         { error: "AI API keys are not configured. Please add OPENROUTER_API_KEY or HUGGINGFACE_API_KEY to environment variables." },
         { status: 500 }
