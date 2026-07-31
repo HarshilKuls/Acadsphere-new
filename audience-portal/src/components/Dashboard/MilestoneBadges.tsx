@@ -16,12 +16,48 @@ export interface MilestoneBadge {
   icon: LucideIcon;
 }
 
-const rarityStyles: Record<BadgeRarity, { dot: string; text: string; badge: string }> = {
-  Common: { dot: "bg-slate-400", text: "text-slate-400", badge: "bg-slate-400/10" },
-  Uncommon: { dot: "bg-emerald-400", text: "text-emerald-500", badge: "bg-emerald-500/10" },
-  Rare: { dot: "bg-sky-400", text: "text-sky-500", badge: "bg-sky-500/10" },
-  Epic: { dot: "bg-violet-400", text: "text-violet-400", badge: "bg-violet-500/10" },
-  Legendary: { dot: "bg-amber-400", text: "text-amber-500", badge: "bg-amber-500/10" },
+const rarityStyles: Record<BadgeRarity, { 
+  dot: string; text: string; badge: string; 
+  cardEarned: string;
+  glowEl: string;
+  iconEarned: string;
+  footerEarned: string;
+}> = {
+  Common: { 
+    dot: "bg-slate-400", text: "text-slate-400", badge: "bg-slate-400/10",
+    cardEarned: "border-slate-500/40 bg-[linear-gradient(135deg,rgba(148,163,184,0.1),transparent_72%)] hover:border-slate-400 hover:shadow-[0_10px_24px_rgba(148,163,184,0.2)]",
+    glowEl: "bg-slate-400/20",
+    iconEarned: "border-slate-400/40 bg-slate-500 text-white shadow-[0_5px_14px_rgba(148,163,184,0.3)]",
+    footerEarned: "border-slate-500/20 text-slate-400",
+  },
+  Uncommon: { 
+    dot: "bg-emerald-400", text: "text-emerald-500", badge: "bg-emerald-500/10",
+    cardEarned: "border-emerald-500/40 bg-[linear-gradient(135deg,rgba(16,185,129,0.1),transparent_72%)] hover:border-emerald-400 hover:shadow-[0_10px_24px_rgba(16,185,129,0.2)]",
+    glowEl: "bg-emerald-500/20",
+    iconEarned: "border-emerald-400/40 bg-emerald-500 text-white shadow-[0_5px_14px_rgba(16,185,129,0.3)]",
+    footerEarned: "border-emerald-500/20 text-emerald-500",
+  },
+  Rare: { 
+    dot: "bg-sky-400", text: "text-sky-500", badge: "bg-sky-500/10",
+    cardEarned: "border-sky-500/40 bg-[linear-gradient(135deg,rgba(14,165,233,0.1),transparent_72%)] hover:border-sky-400 hover:shadow-[0_10px_24px_rgba(14,165,233,0.2)]",
+    glowEl: "bg-sky-500/20",
+    iconEarned: "border-sky-400/40 bg-sky-500 text-white shadow-[0_5px_14px_rgba(14,165,233,0.3)]",
+    footerEarned: "border-sky-500/20 text-sky-500",
+  },
+  Epic: { 
+    dot: "bg-violet-400", text: "text-violet-400", badge: "bg-violet-500/10",
+    cardEarned: "border-violet-500/40 bg-[linear-gradient(135deg,rgba(139,92,246,0.1),transparent_72%)] hover:border-violet-400 hover:shadow-[0_10px_24px_rgba(139,92,246,0.2)]",
+    glowEl: "bg-violet-500/20",
+    iconEarned: "border-violet-400/40 bg-violet-500 text-white shadow-[0_5px_14px_rgba(139,92,246,0.3)]",
+    footerEarned: "border-violet-500/20 text-violet-400",
+  },
+  Legendary: { 
+    dot: "bg-amber-400", text: "text-amber-500", badge: "bg-amber-500/10",
+    cardEarned: "border-amber-500/40 bg-[linear-gradient(135deg,rgba(245,158,11,0.1),transparent_72%)] hover:border-amber-400 hover:shadow-[0_10px_24px_rgba(245,158,11,0.2)]",
+    glowEl: "bg-amber-500/20",
+    iconEarned: "border-amber-400/40 bg-amber-500 text-white shadow-[0_5px_14px_rgba(245,158,11,0.3)]",
+    footerEarned: "border-amber-500/20 text-amber-500",
+  },
 };
 
 function BadgeCard({ badge }: { badge: MilestoneBadge }) {
@@ -32,13 +68,13 @@ function BadgeCard({ badge }: { badge: MilestoneBadge }) {
     <article
       className={`group relative overflow-hidden rounded-xl border p-4 transition-all duration-300 motion-reduce:transition-none ${
         badge.earned
-          ? "border-[var(--accent-50)] bg-[linear-gradient(135deg,var(--accent-20),transparent_72%)] hover:-translate-y-1 hover:border-[var(--accent)] hover:shadow-[0_10px_24px_var(--accent-glow)]"
+          ? `${rarity.cardEarned} hover:-translate-y-1`
           : "border-[var(--outline-dim)] bg-[var(--surface-low)]/70 opacity-70 hover:border-[var(--outline)] hover:opacity-90"
       }`}
     >
-      {badge.earned && <div className="absolute -right-7 -top-7 h-20 w-20 rounded-full bg-[var(--accent)]/10 blur-xl transition-transform duration-500 group-hover:scale-150" />}
+      {badge.earned && <div className={`absolute -right-7 -top-7 h-20 w-20 rounded-full blur-xl transition-transform duration-500 group-hover:scale-150 ${rarity.glowEl}`} />}
       <div className="relative flex items-start gap-3">
-        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${badge.earned ? "border-[var(--accent)]/40 bg-[var(--accent)] text-white shadow-[0_5px_14px_var(--accent-glow)]" : "border-[var(--outline-dim)] bg-[var(--surface-top)] text-[var(--muted)]"}`}>
+        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${badge.earned ? rarity.iconEarned : "border-[var(--outline-dim)] bg-[var(--surface-top)] text-[var(--muted)]"}`}>
           {badge.earned ? <Icon className="h-5 w-5" aria-hidden="true" /> : <Lock className="h-4 w-4" aria-hidden="true" />}
         </div>
         <div className="min-w-0 flex-1">
@@ -51,7 +87,7 @@ function BadgeCard({ badge }: { badge: MilestoneBadge }) {
           <p className="mt-1 text-[10px] leading-relaxed text-[var(--muted)]">{badge.earned ? badge.description : badge.requirement}</p>
         </div>
       </div>
-      <div className={`relative mt-3 border-t pt-2 text-[9px] font-semibold ${badge.earned ? "border-[var(--accent)]/15 text-[var(--accent-hover)]" : "border-[var(--outline-dim)] text-[var(--muted)]"}`}>
+      <div className={`relative mt-3 border-t pt-2 text-[9px] font-semibold ${badge.earned ? rarity.footerEarned : "border-[var(--outline-dim)] text-[var(--muted)]"}`}>
         {badge.earned ? "Earned milestone" : `To unlock: ${badge.requirement}`}
       </div>
     </article>

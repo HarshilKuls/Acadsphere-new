@@ -10,6 +10,7 @@ export interface StudentUser {
   id: string;
   fullName: string;
   college: string;
+  course?: string;
   year: string;
   email: string;
   onboardingCompleted: boolean;
@@ -108,7 +109,7 @@ const getStorageItem = <T>(key: string, defaultValue: T): T => {
   try {
     const item = localStorage.getItem(key);
     return item ? JSON.parse(item) : defaultValue;
-  } catch (error) {
+  } catch (_error: unknown) {
     return defaultValue;
   }
 };
@@ -117,7 +118,7 @@ const setStorageItem = <T>(key: string, value: T): void => {
   if (typeof window === 'undefined') return;
   try {
     localStorage.setItem(key, JSON.stringify(value));
-  } catch (error) {}
+  } catch (_error) {}
 };
 
 // ----------------------------------------------------
@@ -204,7 +205,7 @@ export const db = {
         type: item.type
       })));
 
-    } catch (e) {
+    } catch (_e: unknown) {
       console.warn('Supabase profile synchronizer failed. Falling back to local cache.');
     }
   },
@@ -408,13 +409,27 @@ export const db = {
 
     setStorageItem('acadsphere_calendar', events);
 
-    supabase.from('calendar').upsert({
-      id: newEvent.id.startsWith('cal-') ? undefined : newEvent.id,
-      user_id: newEvent.userId,
-      title: newEvent.title,
-      date: newEvent.date,
-      type: newEvent.type
-    }).then();
+    const isNew = newEvent.id.startsWith('cal-');
+    if (isNew) {
+      supabase.from('calendar').insert({
+        user_id: newEvent.userId,
+        title: newEvent.title,
+        date: newEvent.date,
+        type: newEvent.type
+      }).then(res => {
+        if (res.error) {
+          
+        }
+      });
+    } else {
+      supabase.from('calendar').update({
+        title: newEvent.title,
+        date: newEvent.date,
+        type: newEvent.type
+      }).eq('id', newEvent.id).then(res => {
+        if (res.error) return;
+      });
+    }
 
     return newEvent;
   },
@@ -502,19 +517,20 @@ export const db = {
     try {
       const { data } = await supabase.from('banned_users').select('email').eq('email', email.toLowerCase()).single();
       return !!data;
-    } catch (e) {
+    } catch (_e) {
       // In case of network error, check local storage as fallback
       const list = getStorageItem<string[]>('acadsphere_banned_users', []);
       return list.includes(email.toLowerCase());
     }
   },
 
-  completeOnboarding: async (userId: string, college: string, year: string): Promise<boolean> => {
+  completeOnboarding: async (userId: string, college: string, course: string, year: string): Promise<boolean> => {
     try {
       const { error } = await supabase
         .from('users')
         .update({
           college,
+          course,
           year,
           onboarding_completed: true,
           updated_at: new Date().toISOString()

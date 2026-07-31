@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import { Building, GraduationCap, Sparkles, CheckCircle2, Loader2, Sun, Moon } from "lucide-react";
 import { StudentUser } from "@/lib/db";
 
@@ -8,7 +9,7 @@ interface OnboardingViewProps {
   currentUser: StudentUser;
   isDarkMode: boolean;
   toggleTheme: () => void;
-  onComplete: (college: string, year: string) => Promise<boolean>;
+  onComplete: (college: string, course: string, year: string) => Promise<boolean>;
   onSkip: () => Promise<boolean>;
 }
 
@@ -22,6 +23,7 @@ export default function OnboardingView({
   onSkip,
 }: OnboardingViewProps) {
   const [college, setCollege] = useState(currentUser.college || "");
+  const [course, setCourse] = useState(currentUser.course || "");
   const [year, setYear] = useState(currentUser.year || "I Year");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -35,8 +37,13 @@ export default function OnboardingView({
     setError("");
 
     const trimmedCollege = college.trim();
+    const trimmedCourse = course.trim();
     if (!trimmedCollege) {
       setError("Please enter your college name.");
+      return;
+    }
+    if (!trimmedCourse) {
+      setError("Please enter your course name.");
       return;
     }
     if (!year) {
@@ -45,7 +52,7 @@ export default function OnboardingView({
     }
 
     setIsSubmitting(true);
-    const success = await onComplete(trimmedCollege, year);
+    const success = await onComplete(trimmedCollege, trimmedCourse, year);
     setIsSubmitting(false);
 
     if (success) {
@@ -87,7 +94,7 @@ export default function OnboardingView({
       <header className="flex items-center justify-between px-6 py-4 z-10">
         <div className="flex items-center gap-2.5">
           <div className="bg-[#7C3AED]/10 p-1.5 rounded-lg border border-[#7C3AED]/20">
-            <img src="/Acadshpere%20website%20logo.png" alt="Acadsphere" className="h-7 w-7 object-contain" />
+            <Image src="/Acadshpere%20website%20logo.png" alt="Acadsphere" width={28} height={28} className="h-7 w-7 object-contain" />
           </div>
           <span className="font-bold text-sm tracking-tight">
             Acad<span className="text-gradient-brand">Sphere</span>
@@ -165,6 +172,20 @@ export default function OnboardingView({
                   <option value="VIT University" />
                   <option value="SRM Institute" />
                 </datalist>
+              </div>
+
+              <div className="space-y-2">
+                <label className="flex items-center gap-1.5 font-label-md text-xs font-bold text-zinc-650 dark:text-zinc-350">
+                  <GraduationCap className="h-3.5 w-3.5 text-[#7C3AED]" />
+                  Course Name
+                </label>
+                <input
+                  type="text"
+                  value={course}
+                  onChange={(e) => setCourse(e.target.value)}
+                  placeholder="e.g. B.Tech Computer Science"
+                  className="w-full px-4 py-3 bg-zinc-50 dark:bg-[#09090f] border border-zinc-250 dark:border-zinc-800 rounded-lg focus:ring-2 focus:ring-[#7C3AED]/20 focus:border-[#7C3AED] outline-none transition-all placeholder:text-zinc-400 dark:placeholder:text-zinc-600 font-body-md text-zinc-800 dark:text-zinc-100 text-sm font-medium"
+                />
               </div>
 
               <div className="space-y-2">

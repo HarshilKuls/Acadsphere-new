@@ -12,7 +12,7 @@ export default function FlightPath({ todaysClasses, currentDayName }: FlightPath
     <div className="lg:col-span-8 glass-card p-4 sm:p-6">
       <div className="flex justify-between items-center gap-3 mb-4">
         <div className="min-w-0">
-          <h3 className="text-sm font-extrabold tracking-tight text-[var(--foreground)]">Today's Flight Path</h3>
+          <h3 className="text-sm font-extrabold tracking-tight text-[var(--foreground)]">Today&apos;s Flight Path</h3>
           <span className="text-[10px] text-[var(--muted)]">{currentDayName} Class Schedule</span>
         </div>
         <span className="text-[10px] font-bold bg-[var(--accent)]/10 text-[var(--accent-hover)] px-3 py-1 rounded-full border border-[var(--accent)]/20">

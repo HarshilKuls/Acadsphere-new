@@ -36,6 +36,7 @@ export default function HeroGreeting({ currentUser, todaysClasses, healthScore }
         
         <div className="mt-4 pt-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between text-[10px] uppercase font-bold text-[var(--muted)] tracking-widest border-t border-[var(--border)] w-full">
           <span className="break-words">COLLEGE: {collegeLabel}</span>
+          {currentUser.course && <span className="break-words sm:text-center text-[#7C3AED] dark:text-[#9c82ff]">COURSE: {currentUser.course}</span>}
           <span>YEAR: {yearLabel}</span>
         </div>
       </div>

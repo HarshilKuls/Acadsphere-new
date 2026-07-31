@@ -2,22 +2,22 @@
 
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { 
-  LayoutDashboard, 
-  Code2, 
-  Briefcase, 
-  BookOpen, 
-  Sun, 
-  Moon, 
-  LogOut, 
-  Plus, 
-  Trash2, 
-  Sparkles, 
-  Menu, 
-  X, 
-  ShieldAlert, 
-  Users, 
-  Sliders, 
+import {
+  LayoutDashboard,
+  Code2,
+  Briefcase,
+  BookOpen,
+  Sun,
+  Moon,
+  LogOut,
+  Plus,
+  Trash2,
+  Sparkles,
+  Menu,
+  X,
+  ShieldAlert,
+  Users,
+  Sliders,
   Edit,
   UserX,
   Mail,
@@ -39,7 +39,7 @@ export default function Home() {
 
   // --- Auth Session States ---
   const [currentAdmin, setCurrentAdmin] = useState<AdminAccount | null>(null);
-  
+
   // Login Form
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -130,7 +130,7 @@ export default function Home() {
   // Client init
   useEffect(() => {
     const mountFrame = requestAnimationFrame(() => setMounted(true));
-    
+
     // Read theme preference
     const savedTheme = localStorage.getItem("acadsphere_admin_theme");
     const isDark = savedTheme ? savedTheme === "dark" : true;
@@ -152,7 +152,7 @@ export default function Home() {
   // Fetch data
   useEffect(() => {
     if (!currentAdmin) return;
-    
+
     adminDb.getAdmins().then(setAdminsList).catch(() => setAdminsList([]));
     const reportedFrame = requestAnimationFrame(() => setReportedAccounts(adminDb.getReportedAccounts()));
     const loadLiveContent = async () => {
@@ -261,7 +261,7 @@ export default function Home() {
   if (!currentAdmin) {
     return (
       <div className={`flex min-h-screen items-center justify-center p-4 transition-colors duration-500 ${isDarkMode ? "bg-[#09090B] text-[#F4F4F5]" : "bg-[#FAFAFA] text-[#09090B]"}`}>
-        
+
         {isDarkMode && (
           <>
             <div className="pointer-events-none absolute top-10 left-10 h-72 w-72 rounded-full bg-[#7C3AED]/10 blur-[120px]" />
@@ -270,7 +270,7 @@ export default function Home() {
         )}
 
         <div className={`relative w-full max-w-md overflow-hidden rounded-2xl border p-8 shadow-2xl transition-all duration-300 ${isDarkMode ? "border-zinc-800 bg-[#121214] shadow-black/50" : "border-zinc-200 bg-white shadow-zinc-200"}`}>
-          
+
           <div className="mb-8 text-center">
             <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#06B6D4]/15 text-[#06B6D4] mb-3">
               <Sliders className="h-6 w-6 animate-pulse" />
@@ -336,7 +336,7 @@ export default function Home() {
   // ----------------------------------------------------
   // INTERACTIVE MODULE HANDLERS
   // ----------------------------------------------------
-  
+
   // Events CRUD
   const handleSaveEvent = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -346,37 +346,37 @@ export default function Home() {
     }
 
     try {
-    const saved = await adminDb.saveEvent({
-      id: evId || undefined,
-      title: evTitle,
-      description: evDescription || undefined,
-      organizer: evOrganizer || undefined,
-      date: evDate || undefined,
-      location: evLocation || undefined,
-      applyLink: evLink || undefined,
-      image: evImage || undefined,
-      tags: evTags || undefined,
-      category: evCategory
-    });
+      const saved = await adminDb.saveEvent({
+        id: evId || undefined,
+        title: evTitle,
+        description: evDescription || undefined,
+        organizer: evOrganizer || undefined,
+        date: evDate || undefined,
+        location: evLocation || undefined,
+        applyLink: evLink || undefined,
+        image: evImage || undefined,
+        tags: evTags || undefined,
+        category: evCategory
+      });
 
-    if (evId) {
-      setEventsFeed(eventsFeed.map(evt => evt.id === evId ? saved : evt));
-      triggerToast("Event content updated!");
-    } else {
-      setEventsFeed([...eventsFeed, saved]);
-      triggerToast("New Event broadcast successfully!");
-    }
+      if (evId) {
+        setEventsFeed(eventsFeed.map(evt => evt.id === evId ? saved : evt));
+        triggerToast("Event content updated!");
+      } else {
+        setEventsFeed([...eventsFeed, saved]);
+        triggerToast("New Event broadcast successfully!");
+      }
 
-    // Reset Form
-    setEvId(null);
-    setEvTitle("");
-    setEvDescription("");
-    setEvOrganizer("");
-    setEvDate("");
-    setEvLocation("");
-    setEvLink("");
-    setEvImage("");
-    setEvTags("");
+      // Reset Form
+      setEvId(null);
+      setEvTitle("");
+      setEvDescription("");
+      setEvOrganizer("");
+      setEvDate("");
+      setEvLocation("");
+      setEvLink("");
+      setEvImage("");
+      setEvTags("");
     } catch (error) {
       triggerToast(error instanceof Error ? error.message : "Event could not be saved.");
     }
@@ -415,36 +415,36 @@ export default function Home() {
     }
 
     try {
-    const saved = await adminDb.saveInternship({
-      id: intId || undefined,
-      title: intTitle,
-      companyName: intCompany || undefined,
-      applyLink: intLink || undefined,
-      duration: intDuration || undefined,
-      stipend: intStipend || undefined,
-      qualification: intQualification || undefined,
-      location: intLocation || undefined,
-      description: intDesc || undefined
-    });
+      const saved = await adminDb.saveInternship({
+        id: intId || undefined,
+        title: intTitle,
+        companyName: intCompany || undefined,
+        applyLink: intLink || undefined,
+        duration: intDuration || undefined,
+        stipend: intStipend || undefined,
+        qualification: intQualification || undefined,
+        location: intLocation || undefined,
+        description: intDesc || undefined
+      });
 
-    if (intId) {
-      setInternshipsFeed(internshipsFeed.map(i => i.id === intId ? saved : i));
-      triggerToast("Internship updated!");
-    } else {
-      setInternshipsFeed([...internshipsFeed, saved]);
-      triggerToast("Internship logged!");
-    }
+      if (intId) {
+        setInternshipsFeed(internshipsFeed.map(i => i.id === intId ? saved : i));
+        triggerToast("Internship updated!");
+      } else {
+        setInternshipsFeed([...internshipsFeed, saved]);
+        triggerToast("Internship logged!");
+      }
 
-    // Reset Form
-    setIntId(null);
-    setIntTitle("");
-    setIntCompany("");
-    setIntLink("");
-    setIntDuration("");
-    setIntStipend("");
-    setIntQualification("");
-    setIntLocation("");
-    setIntDesc("");
+      // Reset Form
+      setIntId(null);
+      setIntTitle("");
+      setIntCompany("");
+      setIntLink("");
+      setIntDuration("");
+      setIntStipend("");
+      setIntQualification("");
+      setIntLocation("");
+      setIntDesc("");
     } catch (error) {
       triggerToast(error instanceof Error ? error.message : "Internship could not be saved.");
     }
@@ -482,31 +482,31 @@ export default function Home() {
     }
 
     try {
-    const saved = await adminDb.saveLibrary({
-      id: libId || undefined,
-      title: libTitle,
-      category: libCategory,
-      subject: libSubject || undefined,
-      description: libDescription || undefined,
-      fileLink: libFileLink || undefined,
-      externalLink: libExternalLink || undefined
-    });
+      const saved = await adminDb.saveLibrary({
+        id: libId || undefined,
+        title: libTitle,
+        category: libCategory,
+        subject: libSubject || undefined,
+        description: libDescription || undefined,
+        fileLink: libFileLink || undefined,
+        externalLink: libExternalLink || undefined
+      });
 
-    if (libId) {
-      setLibraryResourceFeed(libraryFeed.map(l => l.id === libId ? saved : l));
-      triggerToast("E-Library index updated!");
-    } else {
-      setLibraryResourceFeed([...libraryFeed, saved]);
-      triggerToast("E-Library resource added!");
-    }
+      if (libId) {
+        setLibraryResourceFeed(libraryFeed.map(l => l.id === libId ? saved : l));
+        triggerToast("E-Library index updated!");
+      } else {
+        setLibraryResourceFeed([...libraryFeed, saved]);
+        triggerToast("E-Library resource added!");
+      }
 
-    // Reset Form
-    setLibId(null);
-    setLibTitle("");
-    setLibSubject("");
-    setLibDescription("");
-    setLibFileLink("");
-    setLibExternalLink("");
+      // Reset Form
+      setLibId(null);
+      setLibTitle("");
+      setLibSubject("");
+      setLibDescription("");
+      setLibFileLink("");
+      setLibExternalLink("");
     } catch (error) {
       triggerToast(error instanceof Error ? error.message : "Library resource could not be saved.");
     }
@@ -542,7 +542,7 @@ export default function Home() {
 
     const nextStatus = report.status === 'Banned' ? 'Resolved' : 'Banned';
     adminDb.saveReportStatus(report.id, nextStatus);
-    
+
     setReportedAccounts(reportedAccounts.map(r => r.id === report.id ? { ...r, status: nextStatus } : r));
     triggerToast(nextStatus === 'Banned' ? `Suspended email: ${report.email}` : `Restored email: ${report.email}`);
 
@@ -582,30 +582,30 @@ export default function Home() {
     }
 
     try {
-    const saved = await adminDb.saveHoliday({
-      id: holId || undefined,
-      title: holTitle,
-      description: holDescription || undefined,
-      date: holDate,
-      type: holType,
-      color: holColor
-    });
+      const saved = await adminDb.saveHoliday({
+        id: holId || undefined,
+        title: holTitle,
+        description: holDescription || undefined,
+        date: holDate,
+        type: holType,
+        color: holColor
+      });
 
-    if (holId) {
-      setHolidaysFeed(holidaysFeed.map(h => h.id === holId ? saved : h));
-      triggerToast("Holiday schedule updated!");
-    } else {
-      setHolidaysFeed([...holidaysFeed, saved]);
-      triggerToast("Academic event published successfully!");
-    }
+      if (holId) {
+        setHolidaysFeed(holidaysFeed.map(h => h.id === holId ? saved : h));
+        triggerToast("Holiday schedule updated!");
+      } else {
+        setHolidaysFeed([...holidaysFeed, saved]);
+        triggerToast("Academic event published successfully!");
+      }
 
-    // Reset Form
-    setHolId(null);
-    setHolTitle("");
-    setHolDescription("");
-    setHolDate("");
-    setHolType("holiday");
-    setHolColor("violet");
+      // Reset Form
+      setHolId(null);
+      setHolTitle("");
+      setHolDescription("");
+      setHolDate("");
+      setHolType("holiday");
+      setHolColor("violet");
     } catch (error) {
       triggerToast(error instanceof Error ? error.message : "Calendar event could not be saved.");
     }
@@ -748,7 +748,7 @@ export default function Home() {
   // ----------------------------------------------------
   return (
     <div className={`flex min-h-screen font-sans transition-colors duration-300 ${isDarkMode ? "bg-[#09090B] text-[#F4F4F5]" : "bg-[#FAFAFA] text-[#09090B]"}`}>
-      
+
       {/* Toast Alert Banner */}
       {toastMessage && (
         <div className="fixed bottom-6 left-6 z-50 rounded-xl glass-panel border border-[#06B6D4]/40 bg-[#06B6D4]/10 px-4 py-3 text-xs font-semibold text-white shadow-xl shadow-black/30 flex items-center gap-2 animate-bounce">
@@ -773,7 +773,7 @@ export default function Home() {
 
       {/* MAIN CONTAINER TABS */}
       <main className="flex-1 w-full p-4 lg:p-8 mt-14 lg:mt-0 mr-0 lg:mr-64 transition-all duration-300">
-        
+
         {/* TOP HEADER CONTROLS */}
         <div className="mb-8 flex items-center justify-between">
           <div>
@@ -787,7 +787,7 @@ export default function Home() {
           <div className="flex items-center gap-4">
             <div className="hidden sm:flex flex-col text-right">
               <span className="text-xs font-bold text-white flex items-center gap-1.5 justify-end">
-                {currentAdmin.fullName} 
+                {currentAdmin.fullName}
                 <span className="text-[9px] bg-[#06B6D4]/15 border border-[#06B6D4]/30 text-white font-extrabold px-1.5 py-0.5 rounded uppercase">
                   {currentAdmin.role}
                 </span>
@@ -809,7 +809,7 @@ export default function Home() {
             ---------------------------------------------------- */}
         {activeTab === "Dashboard" && (
           <div className="space-y-6">
-            
+
             {/* Elegant Welcome glassmorphic Banner */}
             <div className={`relative overflow-hidden rounded-2xl border p-6 ${isDarkMode ? "border-zinc-800 bg-zinc-900/40" : "border-zinc-200 bg-zinc-50"}`}>
               <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -830,12 +830,12 @@ export default function Home() {
 
             {/* HIGH-FIDELITY ADMINISTRATIVE STATS */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              
+
               <div className="glass-card rounded-2xl p-5 text-center">
                 <span className="block text-[10px] font-bold text-zinc-500 uppercase mb-1">Ecosystem Students</span>
                 <span className="text-4xl font-extrabold text-[#7C3AED] tracking-tight">{registeredUsers.length}</span>
               </div>
-              
+
               <div className="glass-card rounded-2xl p-5 text-center">
                 <span className="block text-[10px] font-bold text-zinc-500 uppercase mb-1">Active Hackathons / Events</span>
                 <span className="text-4xl font-extrabold text-[#06B6D4] tracking-tight">{eventsFeed.filter(e => e.category === 'Competition/Event').length}</span>
@@ -857,7 +857,7 @@ export default function Home() {
 
             {/* LIVE FEED RECENT LOGS */}
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-              
+
               {/* Flagged Accounts Log */}
               <div className="glass-card rounded-2xl p-5">
                 <div className="flex items-center justify-between mb-4 border-b border-zinc-800/40 pb-3">
@@ -875,7 +875,7 @@ export default function Home() {
                         <span className="text-[10px] text-zinc-500 font-semibold">{rep.email}</span>
                         <p className="text-[11px] text-zinc-400 mt-1 italic font-medium">&quot;{rep.reason}&quot;</p>
                       </div>
-                      
+
                       <button
                         onClick={() => toggleBanStatus(rep)}
                         className={`text-[10px] font-bold px-3 py-1.5 rounded-lg border transition-all ${rep.status === 'Banned' ? "bg-red-500/15 border-red-500/30 text-red-500" : "bg-[#06B6D4]/15 border-[#06B6D4]/30 text-white hover:bg-[#06B6D4]/30"}`}
@@ -908,7 +908,7 @@ export default function Home() {
                         <span className="text-xs font-bold text-white block">{a.fullName}</span>
                         <span className="text-[10px] text-zinc-500 font-medium">{a.email} • {a.role}</span>
                       </div>
-                      
+
                       <div className="flex gap-2">
                         <span className={`text-[9px] font-bold px-2 py-0.5 rounded border ${a.permissions.manageContent ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : "bg-zinc-800 text-zinc-500 border-transparent"}`}>
                           Content
@@ -937,23 +937,23 @@ export default function Home() {
             ---------------------------------------------------- */}
         {activeTab === "Events / Network" && (
           <div className="space-y-6">
-            
+
             {/* Input Form */}
             <div className="glass-card rounded-2xl p-5">
               <h3 className="text-xs font-bold tracking-wide text-zinc-500 uppercase mb-4 flex items-center gap-1.5">
-                <Plus className="h-4 w-4 text-[#06B6D4]" /> 
+                <Plus className="h-4 w-4 text-[#06B6D4]" />
                 {evId ? `Modify Announcement: ${evTitle}` : "Create Competition / Announcement Nodes"}
               </h3>
 
               <form onSubmit={handleSaveEvent} className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  
+
                   <div className="sm:col-span-2">
                     <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Title (Required)</label>
-                    <input 
-                      type="text" 
-                      value={evTitle} 
-                      onChange={e => setEvTitle(e.target.value)} 
+                    <input
+                      type="text"
+                      value={evTitle}
+                      onChange={e => setEvTitle(e.target.value)}
                       placeholder=" Genesis Hack 2026"
                       className={`w-full rounded-lg border px-3 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-white" : "border-zinc-300 bg-zinc-50 text-zinc-950"}`}
                     />
@@ -961,8 +961,8 @@ export default function Home() {
 
                   <div>
                     <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Type Categories</label>
-                    <select 
-                      value={evCategory} 
+                    <select
+                      value={evCategory}
                       onChange={e => setEvCategory(e.target.value as EventEntry["category"])}
                       className={`w-full rounded-lg border px-3 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-white" : "border-zinc-300 bg-zinc-50 text-zinc-950"}`}
                     >
@@ -973,10 +973,10 @@ export default function Home() {
 
                   <div>
                     <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Organizer (Optional)</label>
-                    <input 
-                      type="text" 
-                      value={evOrganizer} 
-                      onChange={e => setEvOrganizer(e.target.value)} 
+                    <input
+                      type="text"
+                      value={evOrganizer}
+                      onChange={e => setEvOrganizer(e.target.value)}
                       placeholder="Google GDSC"
                       className={`w-full rounded-lg border px-3 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-white" : "border-zinc-300 bg-zinc-50 text-zinc-950"}`}
                     />
@@ -984,10 +984,10 @@ export default function Home() {
 
                   <div>
                     <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Date (Optional)</label>
-                    <input 
-                      type="text" 
-                      value={evDate} 
-                      onChange={e => setEvDate(e.target.value)} 
+                    <input
+                      type="text"
+                      value={evDate}
+                      onChange={e => setEvDate(e.target.value)}
                       placeholder="June 12-14, 2026"
                       className={`w-full rounded-lg border px-3 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-white" : "border-zinc-300 bg-zinc-50 text-zinc-950"}`}
                     />
@@ -995,10 +995,10 @@ export default function Home() {
 
                   <div>
                     <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Location (Optional)</label>
-                    <input 
-                      type="text" 
-                      value={evLocation} 
-                      onChange={e => setEvLocation(e.target.value)} 
+                    <input
+                      type="text"
+                      value={evLocation}
+                      onChange={e => setEvLocation(e.target.value)}
                       placeholder="San Francisco, CA"
                       className={`w-full rounded-lg border px-3 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-white" : "border-zinc-300 bg-zinc-50 text-zinc-950"}`}
                     />
@@ -1006,10 +1006,10 @@ export default function Home() {
 
                   <div>
                     <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Registration / CTA Link</label>
-                    <input 
-                      type="text" 
-                      value={evLink} 
-                      onChange={e => setEvLink(e.target.value)} 
+                    <input
+                      type="text"
+                      value={evLink}
+                      onChange={e => setEvLink(e.target.value)}
                       placeholder="https://hack.google.com"
                       className={`w-full rounded-lg border px-3 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-white" : "border-zinc-300 bg-zinc-50 text-zinc-950"}`}
                     />
@@ -1017,10 +1017,10 @@ export default function Home() {
 
                   <div>
                     <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Image URL (Optional)</label>
-                    <input 
-                      type="text" 
-                      value={evImage} 
-                      onChange={e => setEvImage(e.target.value)} 
+                    <input
+                      type="text"
+                      value={evImage}
+                      onChange={e => setEvImage(e.target.value)}
                       placeholder="https://unsplash.com/..."
                       className={`w-full rounded-lg border px-3 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-white" : "border-zinc-300 bg-zinc-50 text-zinc-950"}`}
                     />
@@ -1030,7 +1030,7 @@ export default function Home() {
 
                 <div>
                   <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Description (Optional)</label>
-                  <textarea 
+                  <textarea
                     rows={2}
                     value={evDescription}
                     onChange={e => setEvDescription(e.target.value)}
@@ -1041,8 +1041,8 @@ export default function Home() {
 
                 <div className="flex justify-end gap-2">
                   {evId && (
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       onClick={() => {
                         setEvId(null);
                         setEvTitle("");
@@ -1053,7 +1053,7 @@ export default function Home() {
                       Cancel Edit
                     </button>
                   )}
-                  <button 
+                  <button
                     type="submit"
                     className="rounded-lg bg-[#06B6D4] hover:bg-[#0891B2] px-4 py-2.5 text-xs font-bold text-white transition-all shadow-md"
                   >
@@ -1066,7 +1066,7 @@ export default function Home() {
             {/* List */}
             <div className="glass-card rounded-2xl p-5">
               <h3 className="text-xs font-bold tracking-wide text-zinc-500 uppercase mb-4">Active Ecosystem Events Feed</h3>
-              
+
               <div className="space-y-3">
                 {eventsFeed.map(evt => (
                   <div key={evt.id} className="p-3.5 border border-zinc-800 bg-zinc-900/10 rounded-xl flex items-center justify-between gap-4">
@@ -1081,14 +1081,14 @@ export default function Home() {
                     </div>
 
                     <div className="flex gap-2">
-                      <button 
+                      <button
                         onClick={() => handleEditEvent(evt)}
                         className="text-zinc-400 hover:text-white p-2 border border-zinc-800 rounded-lg hover:bg-zinc-800 transition-all"
                         title="Edit Item"
                       >
                         <Edit className="h-3.5 w-3.5" />
                       </button>
-                      <button 
+                      <button
                         onClick={() => handleDeleteEvent(evt.id)}
                         className="text-red-500 hover:text-red-400 p-2 border border-zinc-800 rounded-lg hover:bg-zinc-800 transition-all"
                         title="Delete Item"
@@ -1114,7 +1114,7 @@ export default function Home() {
             ---------------------------------------------------- */}
         {activeTab === "Internship" && (
           <div className="space-y-6">
-            
+
             {/* Input Form */}
             <div className="glass-card rounded-2xl p-5">
               <h3 className="text-xs font-bold tracking-wide text-zinc-500 uppercase mb-4 flex items-center gap-1.5">
@@ -1124,13 +1124,13 @@ export default function Home() {
 
               <form onSubmit={handleSaveInternship} className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  
+
                   <div className="sm:col-span-2">
                     <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Role Title (Required)</label>
-                    <input 
-                      type="text" 
-                      value={intTitle} 
-                      onChange={e => setIntTitle(e.target.value)} 
+                    <input
+                      type="text"
+                      value={intTitle}
+                      onChange={e => setIntTitle(e.target.value)}
                       placeholder="Software Developer Intern"
                       className={`w-full rounded-lg border px-3 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-white" : "border-zinc-300 bg-zinc-50 text-zinc-950"}`}
                     />
@@ -1138,10 +1138,10 @@ export default function Home() {
 
                   <div>
                     <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Company (Optional)</label>
-                    <input 
-                      type="text" 
-                      value={intCompany} 
-                      onChange={e => setIntCompany(e.target.value)} 
+                    <input
+                      type="text"
+                      value={intCompany}
+                      onChange={e => setIntCompany(e.target.value)}
                       placeholder="Stripe"
                       className={`w-full rounded-lg border px-3 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-white" : "border-zinc-300 bg-zinc-50 text-zinc-950"}`}
                     />
@@ -1149,10 +1149,10 @@ export default function Home() {
 
                   <div>
                     <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Apply Link</label>
-                    <input 
-                      type="text" 
-                      value={intLink} 
-                      onChange={e => setIntLink(e.target.value)} 
+                    <input
+                      type="text"
+                      value={intLink}
+                      onChange={e => setIntLink(e.target.value)}
                       placeholder="https://stripe.com/jobs"
                       className={`w-full rounded-lg border px-3 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-white" : "border-zinc-300 bg-zinc-50 text-zinc-950"}`}
                     />
@@ -1160,10 +1160,10 @@ export default function Home() {
 
                   <div>
                     <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Duration (Optional)</label>
-                    <input 
-                      type="text" 
-                      value={intDuration} 
-                      onChange={e => setIntDuration(e.target.value)} 
+                    <input
+                      type="text"
+                      value={intDuration}
+                      onChange={e => setIntDuration(e.target.value)}
                       placeholder="6 Months"
                       className={`w-full rounded-lg border px-3 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-white" : "border-zinc-300 bg-zinc-50 text-zinc-950"}`}
                     />
@@ -1171,10 +1171,10 @@ export default function Home() {
 
                   <div>
                     <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Stipend (Optional)</label>
-                    <input 
-                      type="text" 
-                      value={intStipend} 
-                      onChange={e => setIntStipend(e.target.value)} 
+                    <input
+                      type="text"
+                      value={intStipend}
+                      onChange={e => setIntStipend(e.target.value)}
                       placeholder="$5,000 / month"
                       className={`w-full rounded-lg border px-3 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-white" : "border-zinc-300 bg-zinc-50 text-zinc-950"}`}
                     />
@@ -1182,10 +1182,10 @@ export default function Home() {
 
                   <div>
                     <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Qualification Required</label>
-                    <input 
-                      type="text" 
-                      value={intQualification} 
-                      onChange={e => setIntQualification(e.target.value)} 
+                    <input
+                      type="text"
+                      value={intQualification}
+                      onChange={e => setIntQualification(e.target.value)}
                       placeholder="CS/IT Bachelors, basic React"
                       className={`w-full rounded-lg border px-3 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-white" : "border-zinc-300 bg-zinc-50 text-zinc-950"}`}
                     />
@@ -1193,10 +1193,10 @@ export default function Home() {
 
                   <div>
                     <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Location (Optional)</label>
-                    <input 
-                      type="text" 
-                      value={intLocation} 
-                      onChange={e => setIntLocation(e.target.value)} 
+                    <input
+                      type="text"
+                      value={intLocation}
+                      onChange={e => setIntLocation(e.target.value)}
                       placeholder="Remote (US) / Hybrid"
                       className={`w-full rounded-lg border px-3 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-white" : "border-zinc-300 bg-zinc-50 text-zinc-950"}`}
                     />
@@ -1206,7 +1206,7 @@ export default function Home() {
 
                 <div>
                   <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Description (Optional)</label>
-                  <textarea 
+                  <textarea
                     rows={2}
                     value={intDesc}
                     onChange={e => setIntDesc(e.target.value)}
@@ -1217,8 +1217,8 @@ export default function Home() {
 
                 <div className="flex justify-end gap-2">
                   {intId && (
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       onClick={() => {
                         setIntId(null);
                         setIntTitle("");
@@ -1228,7 +1228,7 @@ export default function Home() {
                       Cancel Edit
                     </button>
                   )}
-                  <button 
+                  <button
                     type="submit"
                     className="rounded-lg bg-[#06B6D4] hover:bg-[#0891B2] px-4 py-2.5 text-xs font-bold text-white transition-all shadow-md"
                   >
@@ -1241,7 +1241,7 @@ export default function Home() {
             {/* List */}
             <div className="glass-card rounded-2xl p-5">
               <h3 className="text-xs font-bold tracking-wide text-zinc-500 uppercase mb-4">Active Internship Listings</h3>
-              
+
               <div className="space-y-3">
                 {internshipsFeed.map(item => (
                   <div key={item.id} className="p-3.5 border border-zinc-800 bg-zinc-900/10 rounded-xl flex items-center justify-between gap-4">
@@ -1251,14 +1251,14 @@ export default function Home() {
                     </div>
 
                     <div className="flex gap-2">
-                      <button 
+                      <button
                         onClick={() => handleEditInternship(item)}
                         className="text-zinc-400 hover:text-white p-2 border border-zinc-800 rounded-lg hover:bg-zinc-800 transition-all"
                         title="Edit Listing"
                       >
                         <Edit className="h-3.5 w-3.5" />
                       </button>
-                      <button 
+                      <button
                         onClick={() => handleDeleteInternship(item.id)}
                         className="text-red-500 hover:text-red-400 p-2 border border-zinc-800 rounded-lg hover:bg-zinc-800 transition-all"
                         title="Delete Listing"
@@ -1284,7 +1284,7 @@ export default function Home() {
             ---------------------------------------------------- */}
         {activeTab === "E-Library" && (
           <div className="space-y-6">
-            
+
             {/* Input Form */}
             <div className="glass-card rounded-2xl p-5">
               <h3 className="text-xs font-bold tracking-wide text-zinc-500 uppercase mb-4 flex items-center gap-1.5">
@@ -1294,13 +1294,13 @@ export default function Home() {
 
               <form onSubmit={handleSaveLibrary} className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  
+
                   <div className="sm:col-span-2">
                     <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Resource Title (Required)</label>
-                    <input 
-                      type="text" 
-                      value={libTitle} 
-                      onChange={e => setLibTitle(e.target.value)} 
+                    <input
+                      type="text"
+                      value={libTitle}
+                      onChange={e => setLibTitle(e.target.value)}
                       placeholder="Calculus II Formulas Cheat Sheet"
                       className={`w-full rounded-lg border px-3 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-white" : "border-zinc-300 bg-zinc-50 text-zinc-950"}`}
                     />
@@ -1308,8 +1308,8 @@ export default function Home() {
 
                   <div>
                     <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Category</label>
-                    <select 
-                      value={libCategory} 
+                    <select
+                      value={libCategory}
                       onChange={e => setLibCategory(e.target.value as LibraryResource["category"])}
                       className={`w-full rounded-lg border px-3 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-white" : "border-zinc-300 bg-zinc-50 text-zinc-950"}`}
                     >
@@ -1322,10 +1322,10 @@ export default function Home() {
 
                   <div>
                     <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Subject (Optional)</label>
-                    <input 
-                      type="text" 
-                      value={libSubject} 
-                      onChange={e => setLibSubject(e.target.value)} 
+                    <input
+                      type="text"
+                      value={libSubject}
+                      onChange={e => setLibSubject(e.target.value)}
                       placeholder="Mathematics"
                       className={`w-full rounded-lg border px-3 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-white" : "border-zinc-300 bg-zinc-50 text-zinc-950"}`}
                     />
@@ -1333,10 +1333,10 @@ export default function Home() {
 
                   <div className="sm:col-span-2">
                     <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">PDF File Link Simulation</label>
-                    <input 
-                      type="text" 
-                      value={libFileLink} 
-                      onChange={e => setLibFileLink(e.target.value)} 
+                    <input
+                      type="text"
+                      value={libFileLink}
+                      onChange={e => setLibFileLink(e.target.value)}
                       placeholder="https://drive.google.com/calculus-pdf..."
                       className={`w-full rounded-lg border px-3 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-white" : "border-zinc-300 bg-zinc-50 text-zinc-950"}`}
                     />
@@ -1344,10 +1344,10 @@ export default function Home() {
 
                   <div className="sm:col-span-2">
                     <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">External Resource URL (Optional)</label>
-                    <input 
-                      type="text" 
-                      value={libExternalLink} 
-                      onChange={e => setLibExternalLink(e.target.value)} 
+                    <input
+                      type="text"
+                      value={libExternalLink}
+                      onChange={e => setLibExternalLink(e.target.value)}
                       placeholder="https://khanacademy.org/calculus..."
                       className={`w-full rounded-lg border px-3 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-white" : "border-zinc-300 bg-zinc-50 text-zinc-950"}`}
                     />
@@ -1357,7 +1357,7 @@ export default function Home() {
 
                 <div>
                   <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Brief Description (Optional)</label>
-                  <textarea 
+                  <textarea
                     rows={2}
                     value={libDescription}
                     onChange={e => setLibDescription(e.target.value)}
@@ -1368,8 +1368,8 @@ export default function Home() {
 
                 <div className="flex justify-end gap-2">
                   {libId && (
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       onClick={() => {
                         setLibId(null);
                         setLibTitle("");
@@ -1379,7 +1379,7 @@ export default function Home() {
                       Cancel Edit
                     </button>
                   )}
-                  <button 
+                  <button
                     type="submit"
                     className="rounded-lg bg-[#06B6D4] hover:bg-[#0891B2] px-4 py-2.5 text-xs font-bold text-white transition-all shadow-md"
                   >
@@ -1392,7 +1392,7 @@ export default function Home() {
             {/* List */}
             <div className="glass-card rounded-2xl p-5">
               <h3 className="text-xs font-bold tracking-wide text-zinc-500 uppercase mb-4">Indexed Library Directory</h3>
-              
+
               <div className="space-y-3">
                 {libraryFeed.map(item => (
                   <div key={item.id} className="p-3.5 border border-zinc-800 bg-zinc-900/10 rounded-xl flex items-center justify-between gap-4">
@@ -1407,14 +1407,14 @@ export default function Home() {
                     </div>
 
                     <div className="flex gap-2">
-                      <button 
+                      <button
                         onClick={() => handleEditLibrary(item)}
                         className="text-zinc-400 hover:text-white p-2 border border-zinc-800 rounded-lg hover:bg-zinc-800 transition-all"
                         title="Edit Resource"
                       >
                         <Edit className="h-3.5 w-3.5" />
                       </button>
-                      <button 
+                      <button
                         onClick={() => handleDeleteLibrary(item.id)}
                         className="text-red-500 hover:text-red-400 p-2 border border-zinc-800 rounded-lg hover:bg-zinc-800 transition-all"
                         title="Delete Resource"
@@ -1440,7 +1440,7 @@ export default function Home() {
             ---------------------------------------------------- */}
         {activeTab === "Reported Accounts" && (
           <div className="space-y-6">
-            
+
             {/* Flagged Reports Card */}
             <div className="glass-card rounded-2xl p-5">
               <h3 className="text-xs font-bold tracking-wide text-zinc-500 uppercase mb-6 flex items-center gap-1.5 border-b border-zinc-800 pb-3">
@@ -1500,7 +1500,7 @@ export default function Home() {
                 <h3 className="text-xs font-bold tracking-wide text-zinc-500 uppercase flex items-center gap-1.5">
                   <Users className="h-4 w-4 text-[#06B6D4]" /> Registered Students Directory (Non-Confidential)
                 </h3>
-                
+
                 {/* Clean search bar matching the futuristic theme */}
                 <div className="relative">
                   <input
@@ -1535,7 +1535,7 @@ export default function Home() {
                       </tr>
                     ) : (
                       registeredUsers
-                        .filter(u => 
+                        .filter(u =>
                           u.fullName.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
                           u.email.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
                           u.college.toLowerCase().includes(userSearchQuery.toLowerCase())
@@ -1628,7 +1628,7 @@ export default function Home() {
             ---------------------------------------------------- */}
         {activeTab === "Admin Access Control" && (
           <div className="space-y-6">
-            
+
             {currentAdmin.role === 'Master Admin' ? (
               <>
                 {/* Admin Spawning Form */}
@@ -1641,30 +1641,30 @@ export default function Home() {
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <div>
                         <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Admin Full Name</label>
-                        <input 
-                          type="text" 
-                          value={newAdminName} 
-                          onChange={e => setNewAdminName(e.target.value)} 
+                        <input
+                          type="text"
+                          value={newAdminName}
+                          onChange={e => setNewAdminName(e.target.value)}
                           placeholder="John Connor"
                           className={`w-full rounded-lg border px-3 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-white" : "border-zinc-300 bg-zinc-50 text-zinc-950"}`}
                         />
                       </div>
                       <div>
                         <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Email ID</label>
-                        <input 
-                          type="email" 
-                          value={newAdminEmail} 
-                          onChange={e => setNewAdminEmail(e.target.value)} 
+                        <input
+                          type="email"
+                          value={newAdminEmail}
+                          onChange={e => setNewAdminEmail(e.target.value)}
                           placeholder="connor@acadsph.com"
                           className={`w-full rounded-lg border px-3 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-white" : "border-zinc-300 bg-zinc-50 text-zinc-950"}`}
                         />
                       </div>
                       <div>
                         <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Temporary Password</label>
-                        <input 
-                          type="password" 
-                          value={newAdminPass} 
-                          onChange={e => setNewAdminPass(e.target.value)} 
+                        <input
+                          type="password"
+                          value={newAdminPass}
+                          onChange={e => setNewAdminPass(e.target.value)}
                           placeholder="••••••••"
                           className={`w-full rounded-lg border px-3 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-white" : "border-zinc-300 bg-zinc-50 text-zinc-950"}`}
                         />
@@ -1675,8 +1675,8 @@ export default function Home() {
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 border-t border-zinc-800 pt-4 items-center">
                       <div>
                         <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Admin Access Role</label>
-                        <select 
-                          value={newAdminRole} 
+                        <select
+                          value={newAdminRole}
                           onChange={e => setNewAdminRole(e.target.value as AdminAccount["role"])}
                           className={`w-full rounded-lg border px-3 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-white" : "border-zinc-300 bg-zinc-50 text-zinc-950"}`}
                         >
@@ -1687,8 +1687,8 @@ export default function Home() {
 
                       <div className="flex gap-4 sm:col-span-2">
                         <label className="flex items-center gap-2 text-xs text-zinc-400 font-semibold cursor-pointer">
-                          <input 
-                            type="checkbox" 
+                          <input
+                            type="checkbox"
                             checked={permContent}
                             onChange={e => setPermContent(e.target.checked)}
                             className="rounded accent-[#06B6D4]"
@@ -1697,8 +1697,8 @@ export default function Home() {
                         </label>
 
                         <label className="flex items-center gap-2 text-xs text-zinc-400 font-semibold cursor-pointer">
-                          <input 
-                            type="checkbox" 
+                          <input
+                            type="checkbox"
                             checked={permUsers}
                             onChange={e => setPermUsers(e.target.checked)}
                             className="rounded accent-[#06B6D4]"
@@ -1709,7 +1709,7 @@ export default function Home() {
                     </div>
 
                     <div className="flex justify-end pt-2">
-                      <button 
+                      <button
                         type="submit"
                         className="rounded-lg bg-[#06B6D4] hover:bg-[#0891B2] px-4 py-2.5 text-xs font-bold text-white transition-all shadow-md"
                       >
@@ -1722,7 +1722,7 @@ export default function Home() {
                 {/* Directory list */}
                 <div className="glass-card rounded-2xl p-5">
                   <h3 className="text-xs font-bold tracking-wide text-zinc-500 uppercase mb-4">Ecosystem Administrators Directory</h3>
-                  
+
                   <div className="space-y-3.5">
                     {adminsList.map(a => (
                       <div key={a.id} className="p-3.5 border border-zinc-800 bg-zinc-900/10 rounded-xl flex items-center justify-between gap-4">
@@ -1778,7 +1778,7 @@ export default function Home() {
             ---------------------------------------------------- */}
         {activeTab === "Calendar / Holidays" && (
           <div className="space-y-6">
-            
+
             {/* Input Form */}
             <div className="glass-card rounded-2xl p-5">
               <h3 className="text-xs font-bold tracking-wide text-zinc-500 uppercase mb-4 flex items-center gap-1.5">
@@ -1788,13 +1788,13 @@ export default function Home() {
 
               <form onSubmit={handleSaveHoliday} className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  
+
                   <div className="sm:col-span-2">
                     <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Event/Holiday Title (Required)</label>
-                    <input 
-                      type="text" 
-                      value={holTitle} 
-                      onChange={e => setHolTitle(e.target.value)} 
+                    <input
+                      type="text"
+                      value={holTitle}
+                      onChange={e => setHolTitle(e.target.value)}
                       placeholder="Summer Break Begins"
                       className={`w-full rounded-lg border px-3 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-white" : "border-zinc-300 bg-zinc-50 text-zinc-950"}`}
                     />
@@ -1802,8 +1802,8 @@ export default function Home() {
 
                   <div>
                     <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Event Type</label>
-                    <select 
-                      value={holType} 
+                    <select
+                      value={holType}
                       onChange={e => setHolType(e.target.value as HolidayEntry["type"])}
                       className={`w-full rounded-lg border px-3 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-white" : "border-zinc-300 bg-zinc-50 text-zinc-950"}`}
                     >
@@ -1816,8 +1816,8 @@ export default function Home() {
 
                   <div>
                     <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Color Theme Badge</label>
-                    <select 
-                      value={holColor} 
+                    <select
+                      value={holColor}
                       onChange={e => setHolColor(e.target.value as NonNullable<HolidayEntry["color"]>)}
                       className={`w-full rounded-lg border px-3 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-white" : "border-zinc-300 bg-zinc-50 text-zinc-950"}`}
                     >
@@ -1830,20 +1830,20 @@ export default function Home() {
 
                   <div>
                     <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Date (YYYY-MM-DD)</label>
-                    <input 
-                      type="date" 
-                      value={holDate} 
-                      onChange={e => setHolDate(e.target.value)} 
+                    <input
+                      type="date"
+                      value={holDate}
+                      onChange={e => setHolDate(e.target.value)}
                       className={`w-full rounded-lg border px-3 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-white" : "border-zinc-300 bg-zinc-50 text-zinc-950"}`}
                     />
                   </div>
 
                   <div className="sm:col-span-3">
                     <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Brief Description (Optional)</label>
-                    <input 
-                      type="text" 
-                      value={holDescription} 
-                      onChange={e => setHolDescription(e.target.value)} 
+                    <input
+                      type="text"
+                      value={holDescription}
+                      onChange={e => setHolDescription(e.target.value)}
                       placeholder="University closed. No lectures will be conducted."
                       className={`w-full rounded-lg border px-3 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-white" : "border-zinc-300 bg-zinc-50 text-zinc-950"}`}
                     />
@@ -1853,8 +1853,8 @@ export default function Home() {
 
                 <div className="flex justify-end gap-2 pt-2">
                   {holId && (
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       onClick={() => {
                         setHolId(null);
                         setHolTitle("");
@@ -1866,7 +1866,7 @@ export default function Home() {
                       Cancel Edit
                     </button>
                   )}
-                  <button 
+                  <button
                     type="submit"
                     className="rounded-lg bg-[#06B6D4] hover:bg-[#0891B2] px-4 py-2.5 text-xs font-bold text-white transition-all shadow-md"
                   >
@@ -1879,7 +1879,7 @@ export default function Home() {
             {/* List */}
             <div className="glass-card rounded-2xl p-5">
               <h3 className="text-xs font-bold tracking-wide text-zinc-500 uppercase mb-4">Ecosystem Calendar Schedule</h3>
-              
+
               <div className="space-y-3">
                 {holidaysFeed.length === 0 ? (
                   <p className="text-xs text-zinc-500 italic py-4 text-center">
@@ -1891,12 +1891,11 @@ export default function Home() {
                       <div>
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-extrabold text-white block">{item.title}</span>
-                          <span className={`text-[8px] font-extrabold uppercase px-2 py-0.5 rounded border ${
-                            item.color === 'cyan' ? "bg-cyan-500/10 text-cyan-400 border-cyan-500/20" : 
-                            item.color === 'amber' ? "bg-amber-500/10 text-amber-400 border-amber-500/20" : 
-                            item.color === 'rose' ? "bg-rose-500/10 text-rose-400 border-rose-500/20" : 
-                            "bg-purple-500/10 text-purple-400 border-purple-500/20"
-                          }`}>
+                          <span className={`text-[8px] font-extrabold uppercase px-2 py-0.5 rounded border ${item.color === 'cyan' ? "bg-cyan-500/10 text-cyan-400 border-cyan-500/20" :
+                              item.color === 'amber' ? "bg-amber-500/10 text-amber-400 border-amber-500/20" :
+                                item.color === 'rose' ? "bg-rose-500/10 text-rose-400 border-rose-500/20" :
+                                  "bg-purple-500/10 text-purple-400 border-purple-500/20"
+                            }`}>
                             {item.type}
                           </span>
                         </div>
@@ -1904,14 +1903,14 @@ export default function Home() {
                       </div>
 
                       <div className="flex gap-2">
-                        <button 
+                        <button
                           onClick={() => handleEditHoliday(item)}
                           className="text-zinc-400 hover:text-white p-2 border border-zinc-800 rounded-lg hover:bg-zinc-800 transition-all"
                           title="Edit Event"
                         >
                           <Edit className="h-3.5 w-3.5" />
                         </button>
-                        <button 
+                        <button
                           onClick={() => handleDeleteHoliday(item.id)}
                           className="text-red-500 hover:text-red-400 p-2 border border-zinc-800 rounded-lg hover:bg-zinc-800 transition-all"
                           title="Delete Event"
@@ -1933,7 +1932,7 @@ export default function Home() {
             ---------------------------------------------------- */}
         {activeTab === "Settings" && (
           <div className="space-y-6 max-w-md mx-auto">
-            
+
             <div className="glass-card rounded-2xl p-5">
               <h3 className="text-xs font-bold tracking-wide text-zinc-500 uppercase mb-4 flex items-center gap-1.5">
                 <Sliders className="h-4 w-4 text-[#06B6D4]" /> Settings Command Configuration
@@ -1996,11 +1995,11 @@ export default function Home() {
           RIGHT SIDEBAR FOR ADMINISTRATIVE HUB
           ---------------------------------------------------- */}
       <nav className={`fixed top-0 bottom-0 right-0 z-40 w-64 border-l transition-all duration-300 admin-sidebar ${isSidebarOpen ? "translate-x-0" : "translate-x-full"} lg:translate-x-0 ${isDarkMode ? "border-l-zinc-800 bg-[#111113]" : "border-l-zinc-200 bg-[#F4F4F5]"}`}>
-        
+
         <div className="flex h-full flex-col justify-between py-6">
-          
+
           <div className="space-y-8">
-            
+
             <div className="px-6 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="h-6 w-6 rounded-lg bg-[#06B6D4]/20 border border-[#06B6D4]/35 flex items-center justify-center">
@@ -2008,8 +2007,8 @@ export default function Home() {
                 </div>
                 <span className="font-extrabold tracking-tight text-base text-white">Acadsphere</span>
               </div>
-              
-              <button 
+
+              <button
                 onClick={() => setIsSidebarOpen(false)}
                 className="lg:hidden p-1.5 text-zinc-400 hover:text-white"
               >
@@ -2083,11 +2082,10 @@ export default function Home() {
 
           {/* Modal */}
           <div
-            className={`relative w-full max-w-md overflow-hidden rounded-2xl border shadow-2xl flex flex-col ${
-              isDarkMode
+            className={`relative w-full max-w-md overflow-hidden rounded-2xl border shadow-2xl flex flex-col ${isDarkMode
                 ? "bg-[#121214] border-zinc-800 shadow-purple-500/5 text-zinc-100"
                 : "bg-white border-zinc-250 shadow-purple-500/10 text-zinc-900"
-            }`}
+              }`}
           >
             {/* Header */}
             <div className={`flex items-center justify-between p-5 border-b ${isDarkMode ? "border-zinc-800" : "border-zinc-200"}`}>
@@ -2104,9 +2102,8 @@ export default function Home() {
               </div>
               <button
                 onClick={() => setIsChangePasswordOpen(false)}
-                className={`h-8 w-8 rounded-lg flex items-center justify-center transition-all ${
-                  isDarkMode ? "hover:bg-zinc-800 text-zinc-400" : "hover:bg-zinc-100 text-zinc-500"
-                }`}
+                className={`h-8 w-8 rounded-lg flex items-center justify-center transition-all ${isDarkMode ? "hover:bg-zinc-800 text-zinc-400" : "hover:bg-zinc-100 text-zinc-500"
+                  }`}
               >
                 <X className="h-4 w-4" />
               </button>
@@ -2117,9 +2114,8 @@ export default function Home() {
               {/* Body */}
               <div className="p-5 space-y-4">
                 {passwordUpdateError && (
-                  <div className={`flex items-start gap-2.5 rounded-lg border p-3 text-xs ${
-                    isDarkMode ? "border-red-500/20 bg-red-500/5 text-red-400" : "border-red-200 bg-red-50 text-red-600"
-                  }`}>
+                  <div className={`flex items-start gap-2.5 rounded-lg border p-3 text-xs ${isDarkMode ? "border-red-500/20 bg-red-500/5 text-red-400" : "border-red-200 bg-red-50 text-red-600"
+                    }`}>
                     <AlertCircle className="h-4 w-4 text-red-500 flex-shrink-0 mt-0.5" />
                     <span>{passwordUpdateError}</span>
                   </div>
@@ -2164,11 +2160,10 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={() => setIsChangePasswordOpen(false)}
-                  className={`rounded-lg border px-4 py-2 text-xs font-bold transition-all ${
-                    isDarkMode
+                  className={`rounded-lg border px-4 py-2 text-xs font-bold transition-all ${isDarkMode
                       ? "border-zinc-700 text-zinc-400 hover:bg-zinc-800"
                       : "border-zinc-300 text-zinc-500 hover:bg-zinc-100"
-                  }`}
+                    }`}
                 >
                   Cancel
                 </button>

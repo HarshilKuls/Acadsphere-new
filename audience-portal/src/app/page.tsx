@@ -3,39 +3,20 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { 
-  LayoutDashboard, 
-  CalendarClock, 
-  CheckCircle2, 
-  GraduationCap, 
-  Calculator, 
-  Calendar, 
-  Code2, 
-  Briefcase, 
-  BookOpen, 
-  MessageSquare, 
-  Sun, 
-  Moon, 
-  LogOut, 
-  Plus, 
-  Trash2, 
+import {
+  Code2,
+  Briefcase,
+  MessageSquare,
+  Plus,
+  Trash2,
   Pencil,
-  User, 
-  Clock, 
-  Sparkles, 
-  Menu, 
-  X, 
-  ChevronRight, 
-  Download, 
-  Star, 
-  Award, 
-  FileText, 
-  Percent, 
-  Building,
-  School,
-  CalendarDays,
-  Settings,
-  HelpCircle
+  User,
+  Clock,
+  Sparkles,
+  X,
+  ChevronRight,
+  Download,
+  Star
 } from "lucide-react";
 import { db, supabase, StudentUser, TimetableEntry, AttendanceEntry, CGPASubject, MarksPrediction, CalendarEvent, FeedbackSubmission, HackathonEvent, InternshipListing, LibraryItem } from "@/lib/db";
 
@@ -54,6 +35,7 @@ export default function Home() {
       full_name?: string;
       fullName?: string;
       college?: string;
+      course?: string;
       year?: string;
       name?: string;
       preferred_username?: string;
@@ -70,7 +52,7 @@ export default function Home() {
   const [isBannedView, setIsBannedView] = useState(false);
   const [isForgotPasswordView, setIsForgotPasswordView] = useState(false);
   const [isResetSuccess, setIsResetSuccess] = useState(false);
-  
+
   // Auth Form Fields
   const [fullName, setFullName] = useState("");
   const [college, setCollege] = useState("");
@@ -83,6 +65,7 @@ export default function Home() {
   // Edit Profile States
   const [editFullName, setEditFullName] = useState("");
   const [editCollege, setEditCollege] = useState("");
+  const [editCourse, setEditCourse] = useState("");
   const [editYear, setEditYear] = useState("I Year");
   const [isSavingProfile, setIsSavingProfile] = useState(false);
 
@@ -132,6 +115,7 @@ export default function Home() {
 
   // Attendance
   const [attendance, setAttendance] = useState<AttendanceEntry[]>([]);
+  const [minAttendanceThreshold, setMinAttendanceThreshold] = useState<66 | 75>(75);
   const [attEditingId, setAttEditingId] = useState<string | null>(null);
   const [attSubject, setAttSubject] = useState("");
   const [attAttended, setAttAttended] = useState("0");
@@ -222,6 +206,9 @@ export default function Home() {
       college:
         sanitizeProfileField(metadata.college) ||
         (profile?.college ? sanitizeProfileField(String(profile.college)) : ""),
+      course:
+        sanitizeProfileField(metadata.course) ||
+        (profile?.course ? sanitizeProfileField(String(profile.course)) : ""),
       year:
         sanitizeProfileField(metadata.year) ||
         (profile?.year ? sanitizeProfileField(String(profile.year)) : ""),
@@ -232,20 +219,20 @@ export default function Home() {
 
   const getOrCreateProfile = async (authUser: AuthUserProfile | null): Promise<StudentUser | null> => {
     if (!authUser) return null;
-    
+
     // Detailed logging
-    console.log("authUser:", authUser);
-    
+    // console.log("authUser:", authUser);
+
     try {
       // Fetch user profile from database using safe array query to check for duplicates
       const { data: profileData, error: profileError } = await supabase
         .from('users')
         .select('*')
         .eq('id', authUser.id);
-        
-      console.log("profileData:", profileData);
-      console.log("profileError:", profileError);
-      
+
+      // console.log("profileData:", profileData);
+      // console.log("profileError:", profileError);
+
       if (profileError) {
         console.warn("Could not fetch user profile details:", profileError.message);
         triggerToast("Profile setup incomplete");
@@ -259,10 +246,10 @@ export default function Home() {
         year: sanitizeProfileField(String(profile.year ?? "")),
         email: String(profile.email ?? authUser.email ?? "")
       }));
-      
+
       // Case 1: Profile record does not exist -> Automatically create it
       if (sanitizedProfiles.length === 0) {
-        console.log("Profile does not exist. Automatically creating one for ID:", authUser.id);
+        // console.log("Profile does not exist. Automatically creating one for ID:", authUser.id);
         const profileSnapshot = buildProfileSnapshot(authUser);
         const newProfile = {
           id: authUser.id,
@@ -272,30 +259,30 @@ export default function Home() {
           email: profileSnapshot.email,
           created_at: new Date().toISOString()
         };
-        
+
         // Prevent duplicate creation by double checking/handling inserts carefully
         const { data: insertData, error: insertError } = await supabase
           .from('users')
           .insert(newProfile)
           .select()
           .maybeSingle();
-          
+
         if (insertError) {
           console.warn("Error creating automatic profile:", insertError.message);
           triggerToast("Profile setup incomplete");
           return null;
         }
-        
+
         const created = insertData || newProfile;
         return buildProfileSnapshot(authUser, created);
       }
-      
+
       // Case 2: Duplicate profile records exist
       if (sanitizedProfiles.length > 1) {
         console.warn(`Duplicate profiles detected for user ID ${authUser.id}. Count: ${sanitizedProfiles.length}`);
         return buildProfileSnapshot(authUser, sanitizedProfiles[0]);
       }
-      
+
       // Standard Case: Single profile exists
       return buildProfileSnapshot(authUser, sanitizedProfiles[0]);
     } catch (error: unknown) {
@@ -307,8 +294,9 @@ export default function Home() {
 
   // Run only on Client Mount
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
-    
+
     // Read theme preference
     const savedTheme = localStorage.getItem("acadsphere_theme");
     const isDark = savedTheme ? savedTheme === "dark" : true;
@@ -326,7 +314,7 @@ export default function Home() {
         const email = session.user.email || "";
         const provider = session.user.app_metadata?.provider || (session.user.app_metadata?.providers?.[0]) || "email";
         setAuthProvider(provider);
-        
+
         // 1. Check if admin
         const { data: isAdmin } = await supabase
           .from('admins')
@@ -370,7 +358,7 @@ export default function Home() {
 
     // Listen to live Supabase Auth state modifications
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("Supabase Auth State Change Event:", event);
+      // console.log("Supabase Auth State Change Event:", event);
       if (session?.user) {
         const email = session.user.email || "";
         const provider = session.user.app_metadata?.provider || (session.user.app_metadata?.providers?.[0]) || "email";
@@ -391,7 +379,7 @@ export default function Home() {
           await supabase.auth.signOut();
           return;
         }
-        
+
         if (await db.isEmailBanned(email)) {
           setIsBannedView(true);
           setCurrentUser(null);
@@ -428,8 +416,13 @@ export default function Home() {
   // Synchronize profile inputs with logged-in user profile
   useEffect(() => {
     if (currentUser) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setEditFullName(currentUser.fullName || "");
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setEditCollege(currentUser.college || "");
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setEditCourse(currentUser.course || "");
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setEditYear(currentUser.year || "I Year");
     }
   }, [currentUser]);
@@ -438,23 +431,27 @@ export default function Home() {
   useEffect(() => {
     if (!currentUser || !currentUser.onboardingCompleted) return;
     const userId = currentUser.id;
-    
-    // Set immediate cached local layout first for instant UI response
-    setTimetable(db.getTimetable(userId));
-    setAttendance(db.getAttendance(userId));
-    setCgpaSubjects(db.getCGPASubjects(userId));
-    setPredictions(db.getMarksPredictions(userId));
-    setCalendarEvents(db.getCalendarEvents(userId));
-    setFeedbackHistory(db.getFeedbackHistory(userId));
 
-    // Async trigger live Supabase sync in the background
-    db.syncUserData(userId).then(() => {
+    // Set immediate cached local layout first for instant UI response
+    queueMicrotask(() => {
       setTimetable(db.getTimetable(userId));
       setAttendance(db.getAttendance(userId));
       setCgpaSubjects(db.getCGPASubjects(userId));
       setPredictions(db.getMarksPredictions(userId));
       setCalendarEvents(db.getCalendarEvents(userId));
       setFeedbackHistory(db.getFeedbackHistory(userId));
+    });
+
+    // Async trigger live Supabase sync in the background
+    db.syncUserData(userId).then(() => {
+      queueMicrotask(() => {
+        setTimetable(db.getTimetable(userId));
+        setAttendance(db.getAttendance(userId));
+        setCgpaSubjects(db.getCGPASubjects(userId));
+        setPredictions(db.getMarksPredictions(userId));
+        setCalendarEvents(db.getCalendarEvents(userId));
+        setFeedbackHistory(db.getFeedbackHistory(userId));
+      });
     });
 
     const loadSharedContent = async () => {
@@ -541,16 +538,16 @@ export default function Home() {
     }
 
     try {
-      console.log("=== STARTING SUPABASE AUTH SIGNUP FLOW ===");
-      console.log("Signup Payload:", { fullName, college, year, email: email.toLowerCase() });
-      
+      // console.log("=== STARTING SUPABASE AUTH SIGNUP FLOW ===");
+      // console.log("Signup Payload:", { fullName, college, year, email: email.toLowerCase() });
+
       const { data, error } = await supabase.auth.signUp({
         email: email.toLowerCase(),
         password,
       });
 
-      console.log("Supabase signUp Response (data):", data);
-      console.log("Supabase signUp Error (error):", error);
+      // console.log("Supabase signUp Response (data):", data);
+      // console.log("Supabase signUp Error (error):", error);
 
       if (error) {
         console.warn("Supabase Auth signUp failed:", error.message);
@@ -559,8 +556,8 @@ export default function Home() {
       }
 
       if (data.user) {
-        console.log("Auth user created in Supabase. ID:", data.user.id);
-        
+        // console.log("Auth user created in Supabase. ID:", data.user.id);
+
         // Insert profile details into public.users table in Supabase
         const { error: insertError } = await supabase.from('users').insert({
           id: data.user.id,
@@ -570,7 +567,7 @@ export default function Home() {
           email: email.toLowerCase()
         });
 
-        console.log("public.users Insert Response (error):", insertError);
+        // console.log("public.users Insert Response (error):", insertError);
 
         if (insertError) {
           console.warn("Failed to insert user profile into public.users:", insertError.message);
@@ -578,8 +575,8 @@ export default function Home() {
           return;
         }
 
-        console.log("Successfully created user profile in public.users");
-        
+        // console.log("Successfully created user profile in public.users");
+
         // Check if email confirmation is required (session = null)
         if (!data.session) {
           setIsVerificationPending(true);
@@ -608,7 +605,7 @@ export default function Home() {
   const handleGoogleLogin = async () => {
     setAuthError("");
     try {
-      console.log("Starting Google OAuth login");
+      // console.log("Starting Google OAuth login");
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -654,7 +651,7 @@ export default function Home() {
         return;
       }
 
-      console.log("Starting Supabase login for:", email);
+      // console.log("Starting Supabase login for:", email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.toLowerCase(),
         password,
@@ -759,13 +756,14 @@ export default function Home() {
     triggerToast("Logged out successfully.");
   };
 
-  const handleOnboardingComplete = async (college: string, year: string): Promise<boolean> => {
+  const handleOnboardingComplete = async (college: string, course: string, year: string): Promise<boolean> => {
     if (!currentUser) return false;
-    const success = await db.completeOnboarding(currentUser.id, college, year);
+    const success = await db.completeOnboarding(currentUser.id, college, course, year);
     if (success) {
       const updatedUser: StudentUser = {
         ...currentUser,
         college,
+        course,
         year,
         onboardingCompleted: true
       };
@@ -801,28 +799,32 @@ export default function Home() {
     setIsSavingProfile(true);
     try {
       const { error } = await supabase
-        .from('users')
-        .update({
+        .from('users').update({
           full_name: editFullName,
           college: editCollege,
-          year: editYear
+          course: editCourse,
+          year: editYear,
+          updated_at: new Date().toISOString()
         })
         .eq('id', currentUser.id);
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
 
-      const updatedUser = {
+      const updatedUser: StudentUser = {
         ...currentUser,
         fullName: editFullName,
         college: editCollege,
+        course: editCourse,
         year: editYear
       };
 
       setCurrentUser(updatedUser);
       localStorage.setItem("acadsphere_session", JSON.stringify(updatedUser));
       triggerToast("Profile settings updated successfully!");
-    } catch (err: any) {
-      triggerToast(err.message || "Failed to update profile settings.");
+    } catch (err: unknown) {
+      triggerToast((err as Error)?.message || "Failed to update profile settings.");
     } finally {
       setIsSavingProfile(false);
     }
@@ -877,8 +879,9 @@ export default function Home() {
       setChangeCurrentPassword("");
       setChangeNewPassword("");
       setChangeConfirmNewPassword("");
-    } catch (err: any) {
-      setPasswordUpdateError(err.message || "Failed to update password.");
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : (err as { message?: string })?.message || "Failed to update password.";
+      setPasswordUpdateError(errorMessage);
     } finally {
       setIsUpdatingPassword(false);
     }
@@ -933,7 +936,7 @@ export default function Home() {
           <h1 className="text-2xl font-bold tracking-tight text-zinc-850 dark:text-zinc-100">Verification Link Dispatched</h1>
           <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold mt-1">Ecosystem Registration Flow</p>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 my-6 leading-relaxed">
-            We have dispatched a verification link to your email <strong className="text-[#06B6D4]">{email}</strong>. 
+            We have dispatched a verification link to your email <strong className="text-[#06B6D4]">{email}</strong>.
             Please check your inbox (and spam folder) and verify your account before accessing the command center dashboard.
           </p>
           {authError && (
@@ -964,7 +967,7 @@ export default function Home() {
     return (
       <div className={`flex min-h-screen items-center justify-center p-4 transition-colors duration-300 ${isDarkMode ? "bg-[#09090f] text-[#e6e0ee]" : "bg-[#f4f1fb] text-[#1c1a24]"}`}>
         <div className={`relative w-full max-w-md overflow-hidden rounded-2xl border p-8 shadow-2xl text-center bg-white/85 dark:bg-[#14121b]/80 border-zinc-200 dark:border-zinc-800/40 shadow-black/10`}>
-          
+
           <div className="mb-8 text-center">
             <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#7C3AED]/15 text-[#7C3AED] mb-3">
               <User className="h-6 w-6 animate-pulse" />
@@ -997,8 +1000,8 @@ export default function Home() {
           ) : (
             <form onSubmit={handleForgotPassword} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1.5 text-left">Enter your Email ID</label>
-                <input
+                <label htmlFor="input-enter-your-email-id-1" className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1.5 text-left">Enter your Email ID</label>
+                <input id="input-enter-your-email-id-1"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -1033,7 +1036,7 @@ export default function Home() {
     return (
       <div className={`mesh-gradient-bg min-h-screen flex flex-col font-body-md text-zinc-800 dark:text-zinc-100 ${isDarkMode ? 'dark' : ''}`}>
         <Navbar toggleTheme={toggleTheme} />
-        <Hero 
+        <Hero
           isLoginView={isLoginView}
           setIsLoginView={setIsLoginView}
           email={email}
@@ -1104,19 +1107,20 @@ export default function Home() {
 
     return { targetBoundary, internalContrib, neededExternalContrib, rawExternalNeeded, alreadySecured, feasible };
   };
-  
+
   // 1. Attendance Metrics
   const totalClasses = attendance.reduce((sum, item) => sum + item.total, 0);
   const attendedClasses = attendance.reduce((sum, item) => sum + item.attended, 0);
-  const cumulativeAttendancePercent = totalClasses > 0 ? (attendedClasses / totalClasses) * 100 : 0;
-  
+  const cumulativeAttendancePercent = totalClasses > 0 ? Math.round((attendedClasses / totalClasses) * 100) : 0;
+
   // Skip margin calculation: Total classes skip margin (overall)
-  const isCumulativeSafe = cumulativeAttendancePercent >= 75;
-  const skipMargin = totalClasses > 0 
-    ? Math.max(0, Math.floor((attendedClasses * 4 - totalClasses * 3) / 3)) 
+  const reqRatio = minAttendanceThreshold / 100;
+  const isCumulativeSafe = cumulativeAttendancePercent >= minAttendanceThreshold;
+  const skipMargin = totalClasses > 0
+    ? Math.max(0, Math.floor((attendedClasses - reqRatio * totalClasses) / reqRatio))
     : 0;
   const recoveryNeeded = totalClasses > 0 && !isCumulativeSafe
-    ? Math.ceil((0.75 * totalClasses - attendedClasses) / 0.25)
+    ? Math.ceil((reqRatio * totalClasses - attendedClasses) / (1 - reqRatio))
     : 0;
 
   // 2. CGPA Metrics
@@ -1149,7 +1153,7 @@ export default function Home() {
   const getAcademicHealth = () => {
     const attScore = Math.min(100, cumulativeAttendancePercent);
     const cgpaScore = overallCGPA * 10;
-    
+
     let marksScore = 100;
     if (predictions.length > 0) {
       const avgMarks = predictions.reduce((sum, p) => sum + (p.internalScore / Math.max(1, p.internalTotal)), 0) / predictions.length;
@@ -1174,8 +1178,8 @@ export default function Home() {
     else if (finalScore < 80) status = 'Warning';
 
     const insights: { text: string; type: 'safe' | 'warning' | 'critical' }[] = [];
-    
-    const lowAttSubs = attendance.filter(a => a.total > 0 && (a.attended / a.total) < 0.75);
+
+    const lowAttSubs = attendance.filter(a => a.total > 0 && (a.attended / a.total) < (minAttendanceThreshold / 100));
     if (lowAttSubs.length > 0) {
       insights.push({ text: `Attendance low in ${lowAttSubs[0].subject}`, type: 'critical' });
     } else {
@@ -1229,7 +1233,7 @@ export default function Home() {
   // ----------------------------------------------------
   // MODULE ACTIONS
   // ----------------------------------------------------
-  
+
   // Timetable Save
   const handleAddTimetable = (e: React.FormEvent) => {
     e.preventDefault();
@@ -1336,7 +1340,7 @@ export default function Home() {
       setTtRoom("");
       setIsClearAllModalOpen(false);
       triggerToast("Weekly lecture timetable cleared successfully.");
-    } catch (err: any) {
+    } catch (err: unknown) {
       triggerToast("Failed to clear timetable.");
     } finally {
       setIsClearingTimetable(false);
@@ -1705,8 +1709,8 @@ export default function Home() {
 
   // Search Logic
   const filteredLibrary = libraryFeed.filter(item => {
-    const matchesSearch = item.title.toLowerCase().includes(librarySearch.toLowerCase()) || 
-                          item.subject.toLowerCase().includes(librarySearch.toLowerCase());
+    const matchesSearch = item.title.toLowerCase().includes(librarySearch.toLowerCase()) ||
+      item.subject.toLowerCase().includes(librarySearch.toLowerCase());
     const matchesCategory = libraryCategoryFilter === "All" || item.type === libraryCategoryFilter;
     return matchesSearch && matchesCategory;
   });
@@ -1720,11 +1724,11 @@ export default function Home() {
   };
 
   const filteredEvents = eventsFeed.filter(ev => {
-    const matchesType = radarTypeFilter === "All Types" || 
+    const matchesType = radarTypeFilter === "All Types" ||
       (radarTypeFilter === "Hackathons" && ev.type.toLowerCase() === "hackathon") ||
       (radarTypeFilter === "Competitions" && ev.type.toLowerCase() === "competition") ||
       (radarTypeFilter === "Workshops" && ev.type.toLowerCase() === "workshop");
-    
+
     if (!matchesType) return false;
     if (radarFieldFilter === "All Fields") return true;
 
@@ -1774,13 +1778,13 @@ export default function Home() {
             aria-label="Close sidebar"
           />
         )}
-        
+
         {/* SIDEBAR */}
         <aside id="app-sidebar" className={`sidebar ${isSidebarOpen ? "is-open" : ""} ${isSidebarCollapsed ? "collapsed" : ""}`}>
           <button onClick={() => setIsSidebarOpen(false)} className="sidebar-close lg:hidden" aria-label="Close sidebar">
             <span className="material-symbols-outlined">close</span>
           </button>
-          
+
           <div className="sidebar-logo">
             <Image
               src="/Acadshpere website logo.png"
@@ -1871,7 +1875,7 @@ export default function Home() {
                 </button>
               );
             })}
-            
+
             <button
               onClick={handleSignOut}
               className="nav-item text-red-500 hover:bg-red-500/10"
@@ -1898,7 +1902,7 @@ export default function Home() {
 
         {/* MAIN WRAPPER */}
         <div className="main-wrapper">
-          
+
           {/* TOP NAV */}
           <header className="top-nav">
             <button
@@ -1916,13 +1920,13 @@ export default function Home() {
             >
               <span className="material-symbols-outlined">menu</span>
             </button>
-            
+
             <div className="search-wrapper">
               <span className="material-symbols-outlined search-icon">search</span>
-              <input 
-                type="search" 
-                className="search-input" 
-                placeholder="Search modules, events, files..." 
+              <input
+                type="search"
+                className="search-input"
+                placeholder="Search modules, events, files..."
                 value={librarySearch}
                 onChange={(e) => {
                   setLibrarySearch(e.target.value);
@@ -1939,19 +1943,18 @@ export default function Home() {
                   {isDarkMode ? "light_mode" : "dark_mode"}
                 </span>
               </button>
-              
-              <button className="icon-btn notif-btn" aria-label="Notifications" onClick={() => triggerToast("You have no new notifications.")}>
-                <span className="material-symbols-outlined">notifications</span>
-                <span className="notif-badge" />
-              </button>
 
               <button className="icon-btn" aria-label="History" onClick={() => setActiveTab("Feedback")}>
                 <span className="material-symbols-outlined">history_edu</span>
               </button>
 
               <div className="nav-divider"></div>
-              
-              <div className="user-chip">
+
+              <div
+                className="user-chip cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={() => setActiveTab("Settings")}
+                title="Go to Settings"
+              >
                 <div className="user-info">
                   <span className="user-name">{currentUser.fullName}</span>
                   <span className="user-role">{currentUser.college} &bull; {currentUser.year}</span>
@@ -1968,7 +1971,7 @@ export default function Home() {
 
             {/* ─── TAB 1: MAIN DASHBOARD ─── */}
             {activeTab === "Dashboard" && (
-              <DashboardView 
+              <DashboardView
                 currentUser={currentUser!}
                 todaysClasses={todaysClasses}
                 healthData={healthData}
@@ -1988,1598 +1991,1595 @@ export default function Home() {
               />
             )}
 
-        {/* ----------------------------------------------------
+            {/* ----------------------------------------------------
             TAB 2: TIMETABLE MODULE
             ---------------------------------------------------- */}
-        {activeTab === "Timetable / Schedule" && (
-          <div className="space-y-6">
-            
-            {/* Input Schedule Form */}
-            <div className="glass-card rounded-2xl p-5">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xs font-bold tracking-wide text-zinc-500 uppercase flex items-center gap-1.5">
-                  <Plus className="h-4 w-4 text-[#7C3AED]" /> Log Course Schedule
-                </h3>
-                <button
-                  onClick={() => setIsUploadModalOpen(true)}
-                  className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-purple-600 to-cyan-500 px-3.5 py-2 text-[10px] font-bold text-white shadow-md hover:shadow-lg transition-all active:scale-95"
-                >
-                  <Sparkles className="h-3.5 w-3.5" /> Upload Timetable (AI)
-                </button>
-              </div>
-
-              <form onSubmit={handleAddTimetable} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
-                <div>
-                  <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1.5">Course Subject</label>
-                  <input 
-                    type="text" 
-                    value={ttSubject} 
-                    onChange={e => setTtSubject(e.target.value)} 
-                    placeholder="Computer Networks"
-                    className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1.5">Instructor / Faculty</label>
-                  <input 
-                    type="text" 
-                    value={ttFaculty} 
-                    onChange={e => setTtFaculty(e.target.value)} 
-                    placeholder="Dr. Alan Turing"
-                    className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1.5">Room Code</label>
-                  <input 
-                    type="text" 
-                    value={ttRoom} 
-                    onChange={e => setTtRoom(e.target.value)} 
-                    placeholder="Lab-304"
-                    className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1.5">Weekday Day</label>
-                  <select 
-                    value={ttDay} 
-                    onChange={e => setTtDay(e.target.value)}
-                    className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
-                  >
-                    <option>Monday</option>
-                    <option>Tuesday</option>
-                    <option>Wednesday</option>
-                    <option>Thursday</option>
-                    <option>Friday</option>
-                    <option>Saturday</option>
-                  </select>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1.5">Starts At</label>
-                    <input 
-                      type="time" 
-                      value={ttStart} 
-                      onChange={e => setTtStart(e.target.value)}
-                      className={`w-full rounded-lg border px-3 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1.5">Ends At</label>
-                    <input 
-                      type="time" 
-                      value={ttEnd} 
-                      onChange={e => setTtEnd(e.target.value)}
-                      className={`w-full rounded-lg border px-3 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
-                    />
-                  </div>
-                </div>
-
-                <div className="lg:col-span-3 flex justify-end gap-3">
-                  {ttEditingId && (
-                    <button
-                      type="button"
-                      onClick={cancelTimetableEdit}
-                      className="rounded-lg border border-zinc-800 px-4 py-2.5 text-xs font-bold text-zinc-400 hover:bg-zinc-800/60 transition-all"
-                    >
-                      Cancel Edit
-                    </button>
-                  )}
-                  <button 
-                    type="submit"
-                    className="rounded-lg bg-[#7C3AED] hover:bg-[#6D28D9] px-4 py-2.5 text-xs font-bold text-white transition-all shadow-md active:scale-95"
-                  >
-                    {ttEditingId ? "Update Lecture Block" : "Add Lecture Block"}
-                  </button>
-                </div>
-              </form>
-            </div>
-
-            {/* Weekly Timetable Grid Board */}
-            <div className="glass-card rounded-2xl p-5 overflow-x-auto">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xs font-bold tracking-wide text-zinc-500 uppercase">Weekly Lecture Grid</h3>
-                {timetable.length > 0 && (
-                  <button
-                    onClick={() => setIsClearAllModalOpen(true)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-500/20 bg-red-500/5 hover:bg-red-500/10 text-red-400 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                    Clear All
-                  </button>
-                )}
-              </div>
-              
-              <div className="min-w-[800px] grid grid-cols-6 gap-4">
-                
-                {/* Index Col */}
-                <div className="space-y-3 font-semibold text-center border-r border-zinc-800/40 pr-2">
-                  <div className="h-10 flex items-center justify-center text-zinc-500 text-[10px] uppercase font-bold">Weekdays</div>
-                  {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map(day => (
-                    <div key={day} className="h-[88px] flex items-center justify-center text-xs text-zinc-400 font-bold">{day.slice(0, 3)}</div>
-                  ))}
-                </div>
-
-                {/* Schedule rows: a single right-hand column keeps every weekday aligned with its label. */}
-                <div className="col-span-5 grid grid-rows-[repeat(6,88px)] gap-3 pt-[52px]">
-                {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map(dayName => {
-                  const classes = timetable.filter(t => t.day.toLowerCase() === dayName.toLowerCase());
-                  return (
-                    <div key={dayName} className="relative min-h-0">
-                      
-                      {classes.length > 0 ? (
-                        <div className="flex h-full items-stretch gap-3 overflow-x-auto py-1">
-                          {classes.map(item => (
-                            <div 
-                              key={item.id} 
-                              className={`flex-shrink-0 w-48 rounded-xl border p-3 flex flex-col justify-between ${item.color} relative group ${currentClass?.id === item.id ? "ring-2 ring-[#06B6D4] ring-offset-2 ring-offset-[#09090B]" : ""}`}
-                            >
-                              <div>
-                                <span className="text-xs font-bold block truncate">{item.subject}</span>
-                                <span className="text-[9px] opacity-80 block truncate">Room: {item.room} &bull; {item.faculty}</span>
-                              </div>
-
-                              <div className="flex items-center justify-between mt-2 pt-2 border-t border-current/10">
-                                <span className="text-[9px] font-bold">{item.startTime} - {item.endTime}</span>
-                                
-                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                                  <button
-                                    onClick={() => handleEditTimetable(item)}
-                                    className="p-1 text-zinc-500 hover:text-[#06B6D4] transition-all"
-                                    title="Edit lecture block"
-                                  >
-                                    <Pencil className="h-3.5 w-3.5" />
-                                  </button>
-                                  <button 
-                                    onClick={() => handleDeleteTimetable(item.id)}
-                                    className="p-1 text-red-500 hover:text-red-400 transition-all"
-                                    title="Delete lecture block"
-                                  >
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="flex items-center pl-4 text-[10px] text-zinc-600 font-semibold italic h-16">
-                          No lectures scheduled
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-                </div>
-
-              </div>
-            </div>
-
-            {/* AI Upload Modal */}
-            {isUploadModalOpen && (
-              <TimetableUpload
-                isDarkMode={isDarkMode}
-                onImport={handleImportExtracted}
-                onClose={() => setIsUploadModalOpen(false)}
-                triggerToast={triggerToast}
-              />
-            )}
-
-          </div>
-        )}
-
-        {/* ----------------------------------------------------
-            TAB 3: ATTENDANCE MODULE
-            ---------------------------------------------------- */}
-        {activeTab === "Attendance" && (
-          <div className="space-y-6">
-            
-            {/* Quick Setup Form */}
-            <div className="glass-card rounded-2xl p-5">
-              <h3 className="text-xs font-bold tracking-wide text-zinc-500 uppercase mb-4 flex items-center gap-1.5">
-                <Plus className="h-4 w-4 text-[#7C3AED]" /> {attEditingId ? "Update Course Attendance" : "Register Course Attendance"}
-              </h3>
-
-              <form onSubmit={handleAddAttendance} className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
-                <div>
-                  <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1.5">Subject / Course Name</label>
-                  <input 
-                    type="text" 
-                    value={attSubject} 
-                    onChange={e => setAttSubject(e.target.value)} 
-                    placeholder="Compiler Design"
-                    className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1.5">Classes Attended</label>
-                  <input 
-                    type="number" 
-                    value={attAttended} 
-                    onChange={e => setAttAttended(e.target.value)}
-                    min="0"
-                    step="1"
-                    placeholder="18"
-                    className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1.5">Total Classes Conducted</label>
-                  <input 
-                    type="number" 
-                    value={attTotal} 
-                    onChange={e => setAttTotal(e.target.value)}
-                    min="1"
-                    step="1"
-                    placeholder="24"
-                    className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
-                  />
-                </div>
-
-                <div className="sm:col-span-3 flex justify-end gap-3">
-                  {attEditingId && (
-                    <button
-                      type="button"
-                      onClick={cancelAttendanceEdit}
-                      className="rounded-lg border border-zinc-800 px-4 py-2.5 text-xs font-bold text-zinc-400 hover:bg-zinc-800/60 transition-all"
-                    >
-                      Cancel Edit
-                    </button>
-                  )}
-                  <button 
-                    type="submit"
-                    className="rounded-lg bg-[#7C3AED] hover:bg-[#6D28D9] px-4 py-2.5 text-xs font-bold text-white transition-all shadow-md"
-                  >
-                    {attEditingId ? "Update Tracker" : "Track Subject"}
-                  </button>
-                </div>
-              </form>
-            </div>
-
-            {/* Attendance Trackers List */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {attendance.map(item => {
-                const percent = item.total > 0 ? (item.attended / item.total) * 100 : 0;
-                const isSafe = percent >= 75;
-                const skips = Math.max(0, Math.floor((item.attended * 4 - item.total * 3) / 3));
-                const rec = Math.max(0, Math.ceil((0.75 * item.total - item.attended) / 0.25));
-
-                return (
-                  <div key={item.id} className="glass-card rounded-2xl p-5 flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-start justify-between mb-3">
-                        <div>
-                          <span className="text-sm font-bold text-white block">{item.subject}</span>
-                          <span className="text-[10px] text-zinc-500 font-semibold">Tally: {item.attended} / {item.total} lectures</span>
-                        </div>
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${isSafe ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : "bg-red-500/10 text-red-500 border-red-500/20"}`}>
-                          {percent.toFixed(1)}%
-                        </span>
-                      </div>
-
-                      {/* Horizontal progress bar */}
-                      <div className="w-full h-1.5 bg-zinc-800 rounded-full my-4 overflow-hidden">
-                        <div 
-                          className={`h-full rounded-full transition-all duration-500 ${isSafe ? "bg-[#06B6D4]" : "bg-red-500"}`} 
-                          style={{ width: `${Math.min(100, percent)}%` }} 
-                        />
-                      </div>
-
-                      {/* Dynamic indicators */}
-                      <div className="grid grid-cols-2 gap-2 p-2.5 bg-zinc-800/30 rounded-xl border border-zinc-800/50">
-                        <div className="text-center border-r border-zinc-800">
-                          <span className="block text-[10px] font-bold text-zinc-500 uppercase">Skip Margin</span>
-                          <span className={`text-base font-extrabold block ${isSafe ? "text-emerald-400" : "text-zinc-500"}`}>
-                            {isSafe ? `${skips} Classes` : "0"}
-                          </span>
-                        </div>
-                        <div className="text-center">
-                          <span className="block text-[10px] font-bold text-zinc-500 uppercase">Recovery Target</span>
-                          <span className={`text-base font-extrabold block ${!isSafe ? "text-red-400" : "text-zinc-500"}`}>
-                            {!isSafe ? `${rec} classes` : "Safe"}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Quick increment buttons */}
-                    <div className="flex items-center justify-between gap-3 mt-5 pt-4 border-t border-zinc-800/40">
-                      <div className="flex items-center gap-2">
-                        <button 
-                          onClick={() => handleIncrementAttendance(item.id, true)}
-                          className="bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 text-emerald-400 font-bold text-[10px] px-2.5 py-1.5 rounded-lg transition-all"
-                        >
-                          +1 Attended
-                        </button>
-                        <button 
-                          onClick={() => handleIncrementAttendance(item.id, false)}
-                          className="bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 text-red-400 font-bold text-[10px] px-2.5 py-1.5 rounded-lg transition-all"
-                        >
-                          +1 Missed
-                        </button>
-                      </div>
-
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => handleEditAttendance(item)}
-                          className="text-zinc-600 hover:text-[#06B6D4] p-1 transition-all"
-                          title="Edit Course Tracker"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                        <button 
-                          onClick={() => handleDeleteAttendance(item.id)}
-                          className="text-zinc-600 hover:text-red-500 p-1 transition-all"
-                          title="Delete Course Tracker"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-              {attendance.length === 0 && (
-                <div className="md:col-span-2 text-center border border-dashed border-zinc-800 rounded-2xl p-8">
-                  <p className="text-sm font-bold text-zinc-300">No attendance trackers yet.</p>
-                  <p className="text-xs text-zinc-500 mt-1">Add each subject once, then use the quick buttons after every class.</p>
-                </div>
-              )}
-            </div>
-
-          </div>
-        )}
-
-        {/* ----------------------------------------------------
-            TAB 4: CGPA CALCULATOR
-            ---------------------------------------------------- */}
-        {activeTab === "CGPA Calculator" && (
-          <div className="space-y-6">
-            
-            {/* Quick Metrics Panels */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-              <div className="glass-card rounded-2xl p-5 text-center">
-                <span className="block text-[10px] font-bold text-zinc-500 uppercase mb-1">Cumulative CGPA</span>
-                <span className="text-4xl font-extrabold text-[#7C3AED] tracking-tight">{overallCGPA > 0 ? overallCGPA.toFixed(2) : "0.00"}</span>
-              </div>
-              <div className="glass-card rounded-2xl p-5 text-center">
-                <span className="block text-[10px] font-bold text-zinc-500 uppercase mb-1">Total Credits Earned</span>
-                <span className="text-4xl font-extrabold text-[#06B6D4] tracking-tight">{overallCredits} pts</span>
-              </div>
-              <div className="glass-card rounded-2xl p-5 text-center flex flex-col justify-center">
-                <span className="block text-[10px] font-bold text-zinc-500 uppercase mb-1">Batch Standing</span>
-                <span className="text-xs font-semibold text-zinc-400 mt-1">{getPerformanceSummary(overallCGPA)}</span>
-              </div>
-            </div>
-
-            {/* Semester selector & Input Form */}
-            <div className="glass-card rounded-2xl p-5">
-              <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6 pb-4 border-b border-zinc-800/40">
-                <h3 className="text-xs font-bold tracking-wide text-zinc-500 uppercase">Grade Ledger Panel</h3>
-                
-                <div className="flex items-center gap-1.5 overflow-x-auto py-1">
-                  {[1, 2, 3, 4, 5, 6, 7, 8].map(sem => (
-                    <button 
-                      key={sem}
-                      onClick={() => setSelectedSemester(sem)}
-                      className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-all ${selectedSemester === sem ? "bg-[#7C3AED] text-white border-transparent" : "border-zinc-800 hover:bg-zinc-800 text-zinc-400"}`}
-                    >
-                      Sem {sem}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Add grade input form */}
-              <form onSubmit={handleAddCGPASubject} className="grid grid-cols-1 sm:grid-cols-4 gap-4 items-end">
-                <div className="sm:col-span-2">
-                  <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1.5">Subject Title</label>
-                  <input 
-                    type="text" 
-                    value={cgSubjectName} 
-                    onChange={e => setCgSubjectName(e.target.value)} 
-                    placeholder="Engineering Mathematics III"
-                    className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1.5">Course Credit Value</label>
-                  <input 
-                    type="number" 
-                    value={cgCredits} 
-                    onChange={e => setCgCredits(e.target.value)}
-                    min="1"
-                    max="10"
-                    step="1"
-                    placeholder="3"
-                    className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1.5">Awarded Grade Scale</label>
-                  <select 
-                    value={cgGrade} 
-                    onChange={e => setCgGrade(e.target.value as CGPASubject["grade"])}
-                    className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
-                  >
-                    <option>O</option>
-                    <option>A+</option>
-                    <option>A</option>
-                    <option>B+</option>
-                    <option>B</option>
-                    <option>C</option>
-                    <option>F</option>
-                  </select>
-                </div>
-
-                <div className="sm:col-span-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <p className="text-[10px] text-zinc-500 font-medium">
-                    SGPA = total credit-weighted grade points divided by total credits.
-                  </p>
-                  <div className="flex justify-end gap-3">
-                    {cgEditingId && (
-                      <button
-                        type="button"
-                        onClick={cancelCGPAEdit}
-                        className="rounded-lg border border-zinc-800 px-4 py-2.5 text-xs font-bold text-zinc-400 hover:bg-zinc-800/60 transition-all"
-                      >
-                        Cancel Edit
-                      </button>
-                    )}
-                  <button 
-                    type="submit"
-                    className="rounded-lg bg-[#7C3AED] hover:bg-[#6D28D9] px-4 py-2.5 text-xs font-bold text-white transition-all shadow-md"
-                  >
-                      {cgEditingId ? "Update Grade Course" : "Log Grade Course"}
-                  </button>
-                  </div>
-                </div>
-              </form>
-            </div>
-
-            {/* Semester Grades Ledger Table */}
-            <div className="glass-card rounded-2xl p-5">
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="text-xs font-bold tracking-wide text-zinc-500 uppercase">Grades Sheet - Semester {selectedSemester}</h4>
-                <div className="text-xs font-bold text-zinc-400 bg-zinc-800/40 border border-zinc-800 px-3 py-1 rounded-lg">
-                  SGPA: <strong className="text-[#06B6D4]">{getSGPA(selectedSemester).toFixed(2)}</strong>
-                </div>
-              </div>
-
-              {cgpaSubjects.filter(s => s.semester === selectedSemester).length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="min-w-[560px] w-full text-left text-xs border-collapse">
-                    <thead>
-                      <tr className="border-b border-zinc-800 text-zinc-500">
-                        <th className="py-2.5">Subject</th>
-                        <th className="py-2.5">Credits</th>
-                        <th className="py-2.5">Grade</th>
-                        <th className="py-2.5">Points Value</th>
-                        <th className="py-2.5 text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {cgpaSubjects.filter(s => s.semester === selectedSemester).map(item => (
-                        <tr key={item.id} className="border-b border-zinc-800/50 hover:bg-zinc-800/10">
-                          <td className="py-3 font-semibold text-white">{item.subjectName}</td>
-                          <td className="py-3 text-zinc-400">{item.credits}</td>
-                          <td className="py-3 font-extrabold text-[#7C3AED]">{item.grade}</td>
-                          <td className="py-3 text-zinc-400">{gradePoints[item.grade]}</td>
-                          <td className="py-3 text-right">
-                            <button
-                              onClick={() => handleEditCGPASubject(item)}
-                              className="text-zinc-600 hover:text-[#06B6D4] p-1.5 transition-all"
-                              title="Edit course grade"
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </button>
-                            <button 
-                              onClick={() => handleDeleteCGPASubject(item.id)}
-                              className="text-zinc-600 hover:text-red-500 p-1.5 transition-all"
-                              title="Delete course grade"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <p className="text-xs text-zinc-500 text-center py-8 border border-dashed border-zinc-800 rounded-xl">
-                  No courses logged under Semester {selectedSemester}. Enter course details to compile SGPAs.
-                </p>
-              )}
-            </div>
-
-          </div>
-        )}
-
-        {/* ----------------------------------------------------
-            TAB 5: MARKS PREDICTOR
-            ---------------------------------------------------- */}
-        {activeTab === "Marks Predictor" && (
-          <div className="space-y-6">
-            
-            {/* Input target panel */}
-            <div className="glass-card rounded-2xl p-5">
-              <h3 className="text-xs font-bold tracking-wide text-zinc-500 uppercase mb-4 flex items-center gap-1.5">
-                <Plus className="h-4 w-4 text-[#7C3AED]" /> Target Grade Calibration Form
-              </h3>
-
-              <form onSubmit={handleAddPrediction} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
-                <div>
-                  <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1.5">Course Name</label>
-                  <input 
-                    type="text" 
-                    value={predSubject} 
-                    onChange={e => setPredSubject(e.target.value)} 
-                    placeholder="Operating Systems"
-                    className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1.5">Internals Secured (e.g. 40)</label>
-                  <input 
-                    type="number" 
-                    value={predInternalScore} 
-                    onChange={e => setPredInternalScore(e.target.value)}
-                    min="0"
-                    step="0.01"
-                    placeholder="40"
-                    className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1.5">Internals Total Cap (e.g. 60)</label>
-                  <input 
-                    type="number" 
-                    value={predInternalTotal} 
-                    onChange={e => setPredInternalTotal(e.target.value)}
-                    min="0.01"
-                    step="0.01"
-                    placeholder="60"
-                    className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1.5">External Total Cap</label>
-                  <input
-                    type="number"
-                    value={predExternalTotal}
-                    onChange={e => setPredExternalTotal(e.target.value)}
-                    min="0.01"
-                    step="0.01"
-                    placeholder="100"
-                    className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1.5">Target Grade Boundary</label>
-                  <select 
-                    value={predTargetGrade} 
-                    onChange={e => setPredTargetGrade(e.target.value as MarksPrediction["targetGrade"])}
-                    className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
-                  >
-                    <option>O</option>
-                    <option>A+</option>
-                    <option>A</option>
-                    <option>B+</option>
-                    <option>B</option>
-                    <option>C</option>
-                  </select>
-                </div>
-
-                <div className="lg:col-span-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <div className="flex-1 text-[10px] text-zinc-500 font-medium pb-2 italic self-center">
-                    * Calculation scale assumes Internals = 60%, Externals = 40% grade weighting.
-                  </div>
-                  <div className="flex justify-end gap-3">
-                    {predEditingId && (
-                      <button
-                        type="button"
-                        onClick={cancelPredictionEdit}
-                        className="rounded-lg border border-zinc-800 px-4 py-2.5 text-xs font-bold text-zinc-400 hover:bg-zinc-800/60 transition-all"
-                      >
-                        Cancel Edit
-                      </button>
-                    )}
-                    <button 
-                      type="submit"
-                      className="rounded-lg bg-[#7C3AED] hover:bg-[#6D28D9] px-4 py-2.5 text-xs font-bold text-white transition-all shadow-md"
-                    >
-                      {predEditingId ? "Update Prediction" : "Generate Prediction"}
-                    </button>
-                  </div>
-                </div>
-              </form>
-            </div>
-
-            {/* Predictions List Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {predictions.map(item => {
-                const requirement = getExternalRequirement(item);
-
-                return (
-                  <div key={item.id} className="glass-card rounded-2xl p-5 flex flex-col justify-between border-t-2 border-t-[#06B6D4]">
-                    <div>
-                      <div className="flex items-start justify-between mb-4">
-                        <div>
-                          <span className="text-base font-extrabold text-white block">{item.subject}</span>
-                          <span className="text-[10px] text-zinc-500 font-semibold">Current Internals: {item.internalScore} / {item.internalTotal} ({requirement.internalContrib.toFixed(1)} / 60.0 pts)</span>
-                        </div>
-                        
-                        <div className="text-right">
-                          <span className="text-[10px] font-bold text-zinc-500 block uppercase">Target Grade</span>
-                          <span className="text-lg font-extrabold text-[#7C3AED] block">{item.targetGrade} ({requirement.targetBoundary}%)</span>
-                        </div>
-                      </div>
-
-                      {/* Calculations Details block */}
-                      <div className="space-y-3 p-3 bg-zinc-800/30 rounded-xl border border-zinc-800">
-                        <div className="flex justify-between text-xs">
-                          <span className="text-zinc-400">Needed External Score:</span>
-                          <span className={`font-bold ${requirement.feasible ? "text-white" : "text-rose-500"}`}>
-                            {requirement.alreadySecured ? "Already secured" : requirement.feasible ? `${requirement.rawExternalNeeded} / ${item.externalTotal}` : "Impossible"}
-                          </span>
-                        </div>
-                        <div className="flex justify-between text-[10px]">
-                          <span className="text-zinc-500">Weighted points still needed:</span>
-                          <span className="font-bold text-zinc-300">{Math.max(0, requirement.neededExternalContrib).toFixed(1)} / 40</span>
-                        </div>
-
-                        <div className="w-full h-2 bg-zinc-800 rounded-full overflow-hidden">
-                          <div 
-                            className={`h-full rounded-full transition-all ${requirement.feasible ? "bg-[#7C3AED]" : "bg-red-500"}`}
-                            style={{ width: `${Math.min(100, Math.max(0, (requirement.rawExternalNeeded / item.externalTotal) * 100))}%` }}
-                          />
-                        </div>
-
-                        {!requirement.feasible && (
-                          <p className="text-[10px] text-red-500 font-bold leading-normal">
-                            Target grade is mathematically out of bounds. Reduce the target grade or confirm your exam totals.
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between mt-5 pt-3 border-t border-zinc-800/40">
-                      <span className="text-[10px] font-medium text-zinc-500 italic">
-                        {requirement.alreadySecured ? "Current internals already meet this target." : requirement.feasible ? "Use this as your minimum final exam target." : "Target grade warning active."}
-                      </span>
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => handleEditPrediction(item)}
-                          className="text-zinc-600 hover:text-[#06B6D4] p-1.5 transition-all"
-                          title="Edit prediction"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                        <button 
-                          onClick={() => handleDeletePrediction(item.id)}
-                          className="text-zinc-600 hover:text-red-500 p-1.5 transition-all"
-                          title="Delete prediction"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-              {predictions.length === 0 && (
-                <div className="md:col-span-2 text-center border border-dashed border-zinc-800 rounded-2xl p-8">
-                  <p className="text-sm font-bold text-zinc-300">No marks predictions yet.</p>
-                  <p className="text-xs text-zinc-500 mt-1">Add a course to see the exact external score needed for your target grade.</p>
-                </div>
-              )}
-            </div>
-
-          </div>
-        )}
-
-        {/* ----------------------------------------------------
-            TAB 6: CALENDAR MODULE
-            ---------------------------------------------------- */}
-        {activeTab === "Calendar" && (
-          <div className="space-y-6">
-            
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-              
-              {/* Core Calendar UI Grid */}
-              <div className="glass-card rounded-2xl p-5 xl:col-span-2">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-xs font-bold tracking-wide text-zinc-500 uppercase">Academic Calendar</h3>
-                  
-                  <div className="flex items-center gap-2">
-                    <button 
-                      onClick={() => setCurrentCalendarMonth(new Date(currentCalendarMonth.getFullYear(), currentCalendarMonth.getMonth() - 1))}
-                      className="px-2.5 py-1.5 text-xs border border-zinc-800 hover:bg-zinc-800 rounded-lg text-zinc-400 font-bold"
-                    >
-                      Prev
-                    </button>
-                    <span className="text-xs font-bold text-white px-2">
-                      {currentCalendarMonth.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
-                    </span>
-                    <button 
-                      onClick={() => setCurrentCalendarMonth(new Date(currentCalendarMonth.getFullYear(), currentCalendarMonth.getMonth() + 1))}
-                      className="px-2.5 py-1.5 text-xs border border-zinc-800 hover:bg-zinc-800 rounded-lg text-zinc-400 font-bold"
-                    >
-                      Next
-                    </button>
-                  </div>
-                </div>
-
-                {/* Calendar monthly block */}
-                <div className="grid grid-cols-7 gap-1 sm:gap-2 text-center text-xs font-bold mb-2 text-zinc-500 uppercase tracking-wider text-[9px] sm:text-[10px]">
-                  {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(d => (
-                    <div key={d} className="py-1">{d}</div>
-                  ))}
-                </div>
-
-                <div className="grid grid-cols-7 gap-1 sm:gap-2">
-                  {/* Offsets */}
-                  {Array.from({ length: startDayOffset }).map((_, i) => (
-                    <div key={`offset-${i}`} className="h-10 sm:h-16 border border-zinc-800/10 rounded-lg" />
-                  ))}
-
-                  {/* Month days */}
-                  {calendarDays.map(dayObj => {
-                    const dateStr = dayObj.toISOString().split("T")[0];
-                    const dayEvents = calendarEvents.filter(e => e.date === dateStr);
-                    const isToday = new Date().toDateString() === dayObj.toDateString();
-
-                    return (
-                      <div 
-                        key={dateStr}
-                        className={`min-h-[64px] border p-1 rounded-lg flex flex-col justify-between transition-all ${isToday ? "border-[#7C3AED] bg-[#7C3AED]/5" : "border-zinc-800 hover:border-zinc-700 bg-zinc-900/10"}`}
-                      >
-                        <span className={`text-[10px] font-bold block text-left ${isToday ? "text-[#7C3AED]" : "text-zinc-500"}`}>
-                          {dayObj.getDate()}
-                        </span>
-
-                        <div className="space-y-1 mt-1">
-                          {dayEvents.slice(0, 2).map(ev => {
-                            const badgeColors = {
-                              exam: "bg-red-500/20 text-red-400 border-red-500/20",
-                              deadline: "bg-amber-500/20 text-amber-400 border-amber-500/20",
-                              reminder: "bg-purple-500/20 text-purple-400 border-purple-500/20",
-                              holiday: "bg-[#06B6D4]/20 text-[#06B6D4] border-[#06B6D4]/20"
-                            };
-                            return (
-                              <div 
-                                key={ev.id}
-                                className={`text-[8px] px-1 rounded truncate border font-medium ${badgeColors[ev.type]}`}
-                                title={ev.title}
-                              >
-                                {ev.title}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Add event Form */}
+            {activeTab === "Timetable / Schedule" && (
               <div className="space-y-6">
-                
-                <div className="glass-card rounded-2xl p-5">
-                  <h3 className="text-xs font-bold tracking-wide text-zinc-500 uppercase mb-4 flex items-center gap-1.5">
-                    <Plus className="h-4 w-4 text-[#7C3AED]" /> {calEditingId ? "Update Task Event" : "Record Task Event"}
-                  </h3>
 
-                  <form onSubmit={handleAddCalendarEvent} className="space-y-4">
+                {/* Input Schedule Form */}
+                <div className="glass-card rounded-2xl p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-xs font-bold tracking-wide text-zinc-500 uppercase flex items-center gap-1.5">
+                      <Plus className="h-4 w-4 text-[#7C3AED]" /> Log Course Schedule
+                    </h3>
+                    <button
+                      onClick={() => setIsUploadModalOpen(true)}
+                      className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-purple-600 to-cyan-500 px-3.5 py-2 text-[10px] font-bold text-white shadow-md hover:shadow-lg transition-all active:scale-95"
+                    >
+                      <Sparkles className="h-3.5 w-3.5" /> Upload Timetable (AI)
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleAddTimetable} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
                     <div>
-                      <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Event Summary</label>
-                      <input 
-                        type="text" 
-                        value={calTitle} 
-                        onChange={e => setCalTitle(e.target.value)} 
-                        placeholder="Study Group Session"
-                        className={`w-full rounded-lg border px-3 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
+                      <label htmlFor="input-course-subject-2" className="block text-[10px] font-bold text-zinc-400 uppercase mb-1.5">Course Subject</label>
+                      <input id="input-course-subject-2"
+                        type="text"
+                        value={ttSubject}
+                        onChange={e => setTtSubject(e.target.value)}
+                        placeholder="Computer Networks"
+                        className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Target Date</label>
-                      <input 
-                        type="date" 
-                        value={calDate} 
-                        onChange={e => setCalDate(e.target.value)} 
-                        className={`w-full rounded-lg border px-3 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
+                      <label htmlFor="input-instructor-faculty-3" className="block text-[10px] font-bold text-zinc-400 uppercase mb-1.5">Instructor / Faculty</label>
+                      <input id="input-instructor-faculty-3"
+                        type="text"
+                        value={ttFaculty}
+                        onChange={e => setTtFaculty(e.target.value)}
+                        placeholder="Dr. Alan Turing"
+                        className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Type Categories</label>
-                      <select 
-                        value={calType} 
-                        onChange={e => setCalType(e.target.value as CalendarEvent["type"])}
-                        className={`w-full rounded-lg border px-3 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
+                      <label htmlFor="input-room-code-4" className="block text-[10px] font-bold text-zinc-400 uppercase mb-1.5">Room Code</label>
+                      <input id="input-room-code-4"
+                        type="text"
+                        value={ttRoom}
+                        onChange={e => setTtRoom(e.target.value)}
+                        placeholder="Lab-304"
+                        className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="input-weekday-day-5" className="block text-[10px] font-bold text-zinc-400 uppercase mb-1.5">Weekday Day</label>
+                      <select id="input-weekday-day-5"
+                        value={ttDay}
+                        onChange={e => setTtDay(e.target.value)}
+                        className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
                       >
-                        <option>exam</option>
-                        <option>deadline</option>
-                        <option>reminder</option>
-                        <option>holiday</option>
+                        <option>Monday</option>
+                        <option>Tuesday</option>
+                        <option>Wednesday</option>
+                        <option>Thursday</option>
+                        <option>Friday</option>
+                        <option>Saturday</option>
                       </select>
                     </div>
 
-                    <div className="flex gap-3">
-                      {calEditingId && (
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label htmlFor="input-starts-at-6" className="block text-[10px] font-bold text-zinc-400 uppercase mb-1.5">Starts At</label>
+                        <input id="input-starts-at-6"
+                          type="time"
+                          value={ttStart}
+                          onChange={e => setTtStart(e.target.value)}
+                          className={`w-full rounded-lg border px-3 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="input-ends-at-7" className="block text-[10px] font-bold text-zinc-400 uppercase mb-1.5">Ends At</label>
+                        <input id="input-ends-at-7"
+                          type="time"
+                          value={ttEnd}
+                          onChange={e => setTtEnd(e.target.value)}
+                          className={`w-full rounded-lg border px-3 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="lg:col-span-3 flex justify-end gap-3">
+                      {ttEditingId && (
                         <button
                           type="button"
-                          onClick={cancelCalendarEdit}
-                          className="flex-1 rounded-lg border border-zinc-800 px-4 py-2.5 text-xs font-bold text-zinc-400 hover:bg-zinc-800/60 transition-all"
+                          onClick={cancelTimetableEdit}
+                          className="rounded-lg border border-zinc-800 px-4 py-2.5 text-xs font-bold text-zinc-400 hover:bg-zinc-800/60 transition-all"
                         >
-                          Cancel
+                          Cancel Edit
                         </button>
                       )}
-                      <button 
+                      <button
                         type="submit"
-                        className="flex-1 rounded-lg bg-[#7C3AED] hover:bg-[#6D28D9] px-4 py-2.5 text-xs font-bold text-white transition-all shadow-md"
+                        className="rounded-lg bg-[#7C3AED] hover:bg-[#6D28D9] px-4 py-2.5 text-xs font-bold text-white transition-all shadow-md active:scale-95"
                       >
-                        {calEditingId ? "Update Event" : "Log Event"}
+                        {ttEditingId ? "Update Lecture Block" : "Add Lecture Block"}
                       </button>
                     </div>
                   </form>
                 </div>
 
-                {/* Event lists logger details */}
-                <div className="glass-card rounded-2xl p-5">
-                  <h3 className="text-xs font-bold tracking-wide text-zinc-500 uppercase mb-3">Academic Milestones</h3>
-                  
-                  <div className="space-y-2.5 overflow-y-auto max-h-48 pr-1">
-                    {calendarEvents.filter(e => e.userId !== 'admin').length > 0 ? calendarEvents.filter(e => e.userId !== 'admin').map(ev => (
-                      <div key={ev.id} className="flex items-center justify-between p-2.5 border border-zinc-800 rounded-lg bg-zinc-900/10">
-                        <div>
-                          <span className="text-xs font-bold text-white block truncate max-w-[120px]">{ev.title}</span>
-                          <span className="text-[9px] text-zinc-500 block font-semibold">{ev.date} &bull; {ev.type}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={() => handleEditCalendarEvent(ev)}
-                            className="text-zinc-600 hover:text-[#06B6D4] transition-all p-1"
-                            title="Edit event"
-                          >
-                            <Pencil className="h-3.5 w-3.5" />
-                          </button>
-                          <button 
-                            onClick={() => handleDeleteCalendarEvent(ev.id)}
-                            className="text-zinc-600 hover:text-red-500 transition-all p-1"
-                            title="Delete event"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    )) : (
-                      <p className="text-xs text-zinc-500 text-center py-6 border border-dashed border-zinc-800 rounded-xl">
-                        No personal events yet. Add deadlines, exams, reminders, or holidays here.
-                      </p>
+                {/* Weekly Timetable Grid Board */}
+                <div className="glass-card rounded-2xl p-5 overflow-x-auto">
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-xs font-bold tracking-wide text-zinc-500 uppercase">Weekly Lecture Grid</h3>
+                    {timetable.length > 0 && (
+                      <button
+                        onClick={() => setIsClearAllModalOpen(true)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-500/20 bg-red-500/5 hover:bg-red-500/10 text-red-400 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Clear All
+                      </button>
                     )}
                   </div>
-                </div>
 
-              </div>
+                  <div className="min-w-[800px] grid grid-cols-6 gap-4">
 
-            </div>
-
-          </div>
-        )}
-
-        {/* ----------------------------------------------------
-            TAB 7: EVENTS / NETWORK MODULE
-            ---------------------------------------------------- */}
-        {activeTab === "Events / Network" && (
-          <div className="space-y-6">
-            
-            {/* Filter Controls Panel (Opportunity Radar) */}
-            <div className="glass-card rounded-2xl p-5 flex flex-col lg:flex-row lg:items-center gap-5 justify-between">
-              <div className="flex-1">
-                <h3 className="text-xs font-bold tracking-wide text-zinc-500 uppercase mb-3 flex items-center gap-1.5">
-                  <Sparkles className="h-4 w-4 text-[#7C3AED]" /> Technical Field Focus
-                </h3>
-                <div className="flex flex-wrap items-center gap-2">
-                  {["All Fields", "ECE", "Embedded", "Robotics", "CS/IT"].map(field => (
-                    <button 
-                      key={field}
-                      onClick={() => setRadarFieldFilter(field)}
-                      className={`px-3.5 py-1.5 text-xs font-bold rounded-lg border transition-all ${radarFieldFilter === field ? "bg-[#7C3AED] text-white border-transparent shadow-md shadow-[#7C3AED]/20" : "border-zinc-800 bg-zinc-900/30 hover:bg-zinc-800 text-zinc-400"}`}
-                    >
-                      {field}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="lg:border-l lg:border-zinc-800/60 lg:pl-5">
-                <h3 className="text-xs font-bold tracking-wide text-zinc-500 uppercase mb-3 flex items-center gap-1.5">
-                  <Briefcase className="h-4 w-4 text-[#06B6D4]" /> Event Type
-                </h3>
-                <select 
-                  value={radarTypeFilter}
-                  onChange={(e) => setRadarTypeFilter(e.target.value)}
-                  className={`w-full lg:w-48 rounded-lg border px-3 py-2 text-xs font-bold transition-all outline-none ${isDarkMode ? "border-zinc-800 bg-[#121214] text-white focus:border-[#06B6D4]" : "border-zinc-300 bg-zinc-50 text-zinc-900 focus:border-[#06B6D4]"}`}
-                >
-                  <option value="All Types">All Types</option>
-                  <option value="Hackathons">Hackathons</option>
-                  <option value="Competitions">Competitions</option>
-                  <option value="Workshops">Workshops</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {filteredEvents.length > 0 ? (
-                filteredEvents.map(ev => (
-                  <div key={ev.id} className="glass-card rounded-2xl overflow-hidden flex flex-col justify-between hover:border-[#7C3AED]/40 transition-all group">
-                    <div className="relative">
-                      {ev.image ? (
-                        <img 
-                          src={ev.image} 
-                          alt={ev.title} 
-                          className="h-44 w-full object-cover border-b border-zinc-800/40 group-hover:scale-105 transition-transform duration-500"
-                        />
-                      ) : (
-                        <div className="h-44 w-full border-b border-zinc-800/40 bg-gradient-to-br from-[#7C3AED]/35 via-[#18121f] to-[#06B6D4]/20" aria-hidden="true" />
-                      )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-[#09090B] via-transparent to-transparent opacity-80" />
-                      <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between">
-                        <span className="text-[10px] font-extrabold text-white uppercase bg-[#7C3AED]/80 px-2 py-0.5 rounded backdrop-blur-md">
-                          {ev.type}
-                        </span>
-                        <span className="text-[10px] text-zinc-300 font-bold drop-shadow-md">{ev.date}</span>
-                      </div>
+                    {/* Index Col */}
+                    <div className="space-y-3 font-semibold text-center border-r border-zinc-800/40 pr-2">
+                      <div className="h-10 flex items-center justify-center text-zinc-500 text-[10px] uppercase font-bold">Weekdays</div>
+                      {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map(day => (
+                        <div key={day} className="h-[88px] flex items-center justify-center text-xs text-zinc-400 font-bold">{day.slice(0, 3)}</div>
+                      ))}
                     </div>
 
-                    <div className="p-5 flex-1 flex flex-col justify-between">
-                      <div>
-                        <h4 className="text-base font-extrabold text-white leading-snug">{ev.title}</h4>
-                        <span className="text-[11px] text-[#06B6D4] font-bold block mt-1.5 mb-3">{ev.organizer}</span>
-                        <p className="text-xs text-zinc-500 leading-relaxed mb-4">{ev.description}</p>
-                      </div>
+                    {/* Schedule rows: a single right-hand column keeps every weekday aligned with its label. */}
+                    <div className="col-span-5 grid grid-rows-[repeat(6,88px)] gap-3 pt-[52px]">
+                      {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map(dayName => {
+                        const classes = timetable
+                          .filter(t => t.day.toLowerCase() === dayName.toLowerCase())
+                          .sort((a, b) => a.startTime.localeCompare(b.startTime));
+                        return (
+                          <div key={dayName} className="relative min-h-0">
 
-                      <button 
-                        onClick={() => applyForEvent(ev.id, ev.title, ev.applyLink)}
-                        className={`w-full rounded-lg py-2.5 text-xs font-bold transition-all border ${appliedEvents.includes(ev.id) ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400 font-bold" : "bg-[#7C3AED] hover:bg-[#6D28D9] border-transparent text-white active:scale-95"}`}
+                            {classes.length > 0 ? (
+                              <div className="flex h-full items-stretch gap-3 overflow-x-auto py-1">
+                                {classes.map(item => (
+                                  <div
+                                    key={item.id}
+                                    className={`flex-shrink-0 w-48 rounded-xl border p-3 flex flex-col justify-between ${item.color} relative group ${currentClass?.id === item.id ? "ring-2 ring-[#06B6D4] ring-offset-2 ring-offset-[#09090B]" : ""}`}
+                                  >
+                                    <div>
+                                      <span className="text-xs font-bold block truncate">{item.subject}</span>
+                                      <span className="text-[9px] opacity-80 block truncate">Room: {item.room} &bull; {item.faculty}</span>
+                                    </div>
+
+                                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-current/10">
+                                      <span className="text-[9px] font-bold">{item.startTime} - {item.endTime}</span>
+
+                                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                                        <button
+                                          onClick={() => handleEditTimetable(item)}
+                                          className="p-1 text-zinc-500 hover:text-[#06B6D4] transition-all"
+                                          title="Edit lecture block"
+                                        >
+                                          <Pencil className="h-3.5 w-3.5" />
+                                        </button>
+                                        <button
+                                          onClick={() => handleDeleteTimetable(item.id)}
+                                          className="p-1 text-red-500 hover:text-red-400 transition-all"
+                                          title="Delete lecture block"
+                                        >
+                                          <Trash2 className="h-3.5 w-3.5" />
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="flex items-center pl-4 text-[10px] text-zinc-600 font-semibold italic h-16">
+                                No lectures scheduled
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                  </div>
+                </div>
+
+                {/* AI Upload Modal */}
+                {isUploadModalOpen && (
+                  <TimetableUpload
+                    isDarkMode={isDarkMode}
+                    onImport={handleImportExtracted}
+                    onClose={() => setIsUploadModalOpen(false)}
+                    triggerToast={triggerToast}
+                  />
+                )}
+
+              </div>
+            )}
+
+            {/* ----------------------------------------------------
+            TAB 3: ATTENDANCE MODULE
+            ---------------------------------------------------- */}
+            {activeTab === "Attendance" && (
+              <div className="space-y-6">
+
+                {/* Threshold Toggle */}
+                <div className="flex justify-between items-center bg-zinc-900/5 border border-zinc-200 dark:border-zinc-800/40 p-3 rounded-2xl glass-card">
+                  <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wide">Min. Requirement</span>
+                  <div className="flex bg-zinc-200/50 dark:bg-zinc-800/50 rounded-lg p-1">
+                    <button
+                      onClick={() => setMinAttendanceThreshold(66)}
+                      className={`text-xs px-3 py-1 rounded-md font-bold transition-all ${minAttendanceThreshold === 66 ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}
+                    >
+                      66%
+                    </button>
+                    <button
+                      onClick={() => setMinAttendanceThreshold(75)}
+                      className={`text-xs px-3 py-1 rounded-md font-bold transition-all ${minAttendanceThreshold === 75 ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}
+                    >
+                      75%
+                    </button>
+                  </div>
+                </div>
+
+                {/* Quick Setup Form */}
+                <div className="glass-card rounded-2xl p-5">
+                  <h3 className="text-xs font-bold tracking-wide text-zinc-500 uppercase mb-4 flex items-center gap-1.5">
+                    <Plus className="h-4 w-4 text-[#7C3AED]" /> {attEditingId ? "Update Course Attendance" : "Register Course Attendance"}
+                  </h3>
+
+                  <form onSubmit={handleAddAttendance} className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+                    <div>
+                      <label htmlFor="input-subject-course-name-8" className="block text-[10px] font-bold text-zinc-400 uppercase mb-1.5">Subject / Course Name</label>
+                      <input id="input-subject-course-name-8"
+                        type="text"
+                        value={attSubject}
+                        onChange={e => setAttSubject(e.target.value)}
+                        placeholder="Compiler Design"
+                        className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="input-classes-attended-9" className="block text-[10px] font-bold text-zinc-400 uppercase mb-1.5">Classes Attended</label>
+                      <input id="input-classes-attended-9"
+                        type="number"
+                        value={attAttended}
+                        onChange={e => setAttAttended(e.target.value)}
+                        min="0"
+                        step="1"
+                        placeholder="18"
+                        className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="input-total-classes-conducted-10" className="block text-[10px] font-bold text-zinc-400 uppercase mb-1.5">Total Classes Conducted</label>
+                      <input id="input-total-classes-conducted-10"
+                        type="number"
+                        value={attTotal}
+                        onChange={e => setAttTotal(e.target.value)}
+                        min="1"
+                        step="1"
+                        placeholder="24"
+                        className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
+                      />
+                    </div>
+
+                    <div className="sm:col-span-3 flex justify-end gap-3">
+                      {attEditingId && (
+                        <button
+                          type="button"
+                          onClick={cancelAttendanceEdit}
+                          className="rounded-lg border border-zinc-800 px-4 py-2.5 text-xs font-bold text-zinc-400 hover:bg-zinc-800/60 transition-all"
+                        >
+                          Cancel Edit
+                        </button>
+                      )}
+                      <button
+                        type="submit"
+                        className="rounded-lg bg-[#7C3AED] hover:bg-[#6D28D9] px-4 py-2.5 text-xs font-bold text-white transition-all shadow-md"
                       >
-                        {appliedEvents.includes(ev.id) ? "Registration Confirmed ✓" : "Register to Network"}
+                        {attEditingId ? "Update Tracker" : "Track Subject"}
                       </button>
                     </div>
-                  </div>
-                ))
-              ) : (
-                <div className="col-span-full py-16 text-center border border-zinc-800/40 border-dashed rounded-2xl bg-zinc-900/20">
-                  <Code2 className="h-8 w-8 text-zinc-600 mx-auto mb-3" />
-                  <p className="text-sm text-zinc-400 font-bold">No events found</p>
-                  <p className="text-xs text-zinc-500 mt-1">Try adjusting your field focus.</p>
+                  </form>
                 </div>
-              )}
-            </div>
 
-          </div>
-        )}
+                {/* Attendance Trackers List */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {attendance.map(item => {
+                    const percent = item.total > 0 ? (item.attended / item.total) * 100 : 0;
+                    const reqRatio = minAttendanceThreshold / 100;
+                    const isSafe = percent >= minAttendanceThreshold;
+                    const skips = Math.max(0, Math.floor((item.attended - reqRatio * item.total) / reqRatio));
+                    const rec = Math.max(0, Math.ceil((reqRatio * item.total - item.attended) / (1 - reqRatio)));
 
-        {/* ----------------------------------------------------
-            TAB 8: INTERNSHIP MODULE
-            ---------------------------------------------------- */}
-        {activeTab === "Internship" && (
-          <div className="space-y-6">
-            
-            {/* Filter Controls Panel (Opportunity Radar) */}
-            <div className="glass-card rounded-2xl p-5 flex flex-col lg:flex-row lg:items-center gap-5 justify-between">
-              <div className="flex-1">
-                <h3 className="text-xs font-bold tracking-wide text-zinc-500 uppercase mb-3 flex items-center gap-1.5">
-                  <Sparkles className="h-4 w-4 text-[#7C3AED]" /> Technical Field Focus
-                </h3>
-                <div className="flex flex-wrap items-center gap-2">
-                  {["All Fields", "ECE", "Embedded", "Robotics", "CS/IT"].map(field => (
-                    <button 
-                      key={field}
-                      onClick={() => setRadarFieldFilter(field)}
-                      className={`px-3.5 py-1.5 text-xs font-bold rounded-lg border transition-all ${radarFieldFilter === field ? "bg-[#7C3AED] text-white border-transparent shadow-md shadow-[#7C3AED]/20" : "border-zinc-800 bg-zinc-900/30 hover:bg-zinc-800 text-zinc-400"}`}
-                    >
-                      {field}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {filteredInternships.length > 0 ? (
-                filteredInternships.map(item => (
-                  <div key={item.id} className="glass-card rounded-2xl p-5 flex flex-col justify-between border-l-4 border-l-[#7C3AED] hover:border-l-[#06B6D4] transition-all">
-                    
-                    <div>
-                      <div className="flex items-start justify-between mb-4">
+                    return (
+                      <div key={item.id} className="glass-card rounded-2xl p-5 flex flex-col justify-between">
                         <div>
-                          <h4 className="text-base font-extrabold text-white">{item.role}</h4>
-                          <span className="text-xs text-[#06B6D4] font-bold block mt-1">{item.company}</span>
+                          <div className="flex items-start justify-between mb-3">
+                            <div>
+                              <span className="text-sm font-bold text-white block">{item.subject}</span>
+                              <span className="text-[10px] text-zinc-500 font-semibold">Tally: {item.attended} / {item.total} lectures</span>
+                            </div>
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${isSafe ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : "bg-red-500/10 text-red-500 border-red-500/20"}`}>
+                              {percent.toFixed(1)}%
+                            </span>
+                          </div>
+
+                          {/* Horizontal progress bar */}
+                          <div className="w-full h-1.5 bg-zinc-800 rounded-full my-4 overflow-hidden">
+                            <div
+                              className={`h-full rounded-full transition-all duration-500 ${isSafe ? "bg-[#06B6D4]" : "bg-red-500"}`}
+                              style={{ width: `${Math.min(100, percent)}%` }}
+                            />
+                          </div>
+
+                          {/* Dynamic indicators */}
+                          <div className="grid grid-cols-2 gap-2 p-2.5 bg-zinc-800/30 rounded-xl border border-zinc-800/50">
+                            <div className="text-center border-r border-zinc-800">
+                              <span className="block text-[10px] font-bold text-zinc-500 uppercase">Skip Margin</span>
+                              <span className={`text-base font-extrabold block ${isSafe ? "text-emerald-400" : "text-zinc-500"}`}>
+                                {isSafe ? `${skips} Classes` : "0"}
+                              </span>
+                            </div>
+                            <div className="text-center">
+                              <span className="block text-[10px] font-bold text-zinc-500 uppercase">Recovery Target</span>
+                              <span className={`text-base font-extrabold block ${!isSafe ? "text-red-400" : "text-zinc-500"}`}>
+                                {!isSafe ? `${rec} classes` : "Safe"}
+                              </span>
+                            </div>
+                          </div>
                         </div>
 
-                        <div className="h-10 w-10 rounded-xl bg-zinc-800 flex items-center justify-center font-black text-white border border-zinc-700 shadow-inner">
-                          {item.logo}
+                        {/* Quick increment buttons */}
+                        <div className="flex items-center justify-between gap-3 mt-5 pt-4 border-t border-zinc-800/40">
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleIncrementAttendance(item.id, true)}
+                              className="bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 text-emerald-400 font-bold text-[10px] px-2.5 py-1.5 rounded-lg transition-all"
+                            >
+                              +1 Attended
+                            </button>
+                            <button
+                              onClick={() => handleIncrementAttendance(item.id, false)}
+                              className="bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 text-red-400 font-bold text-[10px] px-2.5 py-1.5 rounded-lg transition-all"
+                            >
+                              +1 Missed
+                            </button>
+                          </div>
+
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => handleEditAttendance(item)}
+                              className="text-zinc-600 hover:text-[#06B6D4] p-1 transition-all"
+                              title="Edit Course Tracker"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteAttendance(item.id)}
+                              className="text-zinc-600 hover:text-red-500 p-1 transition-all"
+                              title="Delete Course Tracker"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
                         </div>
                       </div>
-
-                      <div className="grid grid-cols-2 gap-3 mb-4 p-3 bg-zinc-800/20 rounded-xl border border-zinc-850">
-                        <div>
-                          <span className="block text-[9px] font-bold text-zinc-500 uppercase">Stipend Cap</span>
-                          <span className="text-xs font-extrabold text-white">{item.stipend}</span>
-                        </div>
-                        <div>
-                          <span className="block text-[9px] font-bold text-zinc-500 uppercase">Duration</span>
-                          <span className="text-xs font-bold text-zinc-400">{item.duration}</span>
-                        </div>
-                      </div>
-
-                      <div className="space-y-1 mb-5">
-                        <span className="block text-[9px] font-bold text-zinc-500 uppercase">Eligibility Criteria</span>
-                        <p className="text-xs text-zinc-400 leading-normal line-clamp-2">{item.eligibility}</p>
-                      </div>
+                    );
+                  })}
+                  {attendance.length === 0 && (
+                    <div className="md:col-span-2 text-center border border-dashed border-zinc-800 rounded-2xl p-8">
+                      <p className="text-sm font-bold text-zinc-300">No attendance trackers yet.</p>
+                      <p className="text-xs text-zinc-500 mt-1">Add each subject once, then use the quick buttons after every class.</p>
                     </div>
-
-                    <button 
-                      onClick={() => applyForInternship(item.id, item.company, item.role, item.applyLink)}
-                      className={`w-full rounded-lg py-2.5 text-xs font-bold transition-all border ${appliedInternships.includes(item.id) ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400 font-bold" : "bg-[#7C3AED] hover:bg-[#6D28D9] border-transparent text-white active:scale-95"}`}
-                    >
-                      {appliedInternships.includes(item.id) ? "Application Transmitted ✓" : "Apply Instantly"}
-                    </button>
-
-                  </div>
-                ))
-              ) : (
-                <div className="col-span-full py-16 text-center border border-zinc-800/40 border-dashed rounded-2xl bg-zinc-900/20">
-                  <Briefcase className="h-8 w-8 text-zinc-600 mx-auto mb-3" />
-                  <p className="text-sm text-zinc-400 font-bold">No internships found</p>
-                  <p className="text-xs text-zinc-500 mt-1">Try adjusting your field focus.</p>
+                  )}
                 </div>
-              )}
-            </div>
 
-          </div>
-        )}
-
-
-        {/* ----------------------------------------------------
-            TAB 9: E-LIBRARY
-            ---------------------------------------------------- */}
-        {activeTab === "E-Library" && (
-          <div className="space-y-6">
-            
-            {/* Search Filter and Category Board */}
-            <div className="glass-card rounded-2xl p-5 flex flex-col sm:flex-row items-center gap-4 justify-between">
-              
-              <div className="w-full sm:max-w-md">
-                <input 
-                  type="text" 
-                  value={librarySearch}
-                  onChange={e => setLibrarySearch(e.target.value)}
-                  placeholder="Search notes, subjects, exams or keywords..."
-                  className={`w-full rounded-lg border px-4 py-2.5 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
-                />
               </div>
+            )}
 
-              <div className="flex items-center gap-1.5 overflow-x-auto py-1">
-                {["All", "Notes", "PDF", "PYQ", "Book"].map(cat => (
-                  <button 
-                    key={cat}
-                    onClick={() => setLibraryCategoryFilter(cat)}
-                    className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-all ${libraryCategoryFilter === cat ? "bg-[#7C3AED] text-white border-transparent" : "border-zinc-800 hover:bg-zinc-800 text-zinc-400"}`}
-                  >
-                    {cat}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Library Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredLibrary.length > 0 ? (
-                filteredLibrary.map(item => (
-                  <div key={item.id} className="glass-card rounded-2xl p-5 flex flex-col justify-between hover:border-[#06B6D4]/50 transition-all">
-                    
-                    <div>
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="text-[9px] font-extrabold text-[#7C3AED] uppercase bg-[#7C3AED]/10 px-2 py-0.5 rounded border border-[#7C3AED]/20">
-                          {item.type}
-                        </span>
-                        <span className="text-[10px] text-zinc-500 font-bold">{item.size}</span>
-                      </div>
-
-                      <h4 className="text-sm font-extrabold text-white leading-snug tracking-tight mb-2">{item.title}</h4>
-                      <p className="text-[11px] text-zinc-400 font-semibold">{item.subject} &bull; {item.semester}</p>
-                    </div>
-
-                    <button 
-                      onClick={() => triggerToast(`Downloading: ${item.title}...`)}
-                      className="mt-5 w-full flex items-center justify-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-900/40 hover:bg-zinc-850 hover:border-zinc-700 py-2.5 text-xs font-bold text-white transition-all active:scale-95"
-                    >
-                      <Download className="h-3.5 w-3.5 text-[#06B6D4]" />
-                      Download Resource
-                    </button>
-
-                  </div>
-                ))
-              ) : (
-                <div className="col-span-full py-16 text-center">
-                  <p className="text-xs text-zinc-500 font-semibold italic">No matched academic resources. Adjust filtering query.</p>
-                </div>
-              )}
-            </div>
-
-          </div>
-        )}
-
-        {/* ----------------------------------------------------
-            TAB 10: FEEDBACK MODULE
+            {/* ----------------------------------------------------
+            TAB 4: CGPA CALCULATOR
             ---------------------------------------------------- */}
-        {activeTab === "Feedback" && (
-          <div className="space-y-6 max-w-xl mx-auto">
-            
-            <div className="glass-card rounded-2xl p-5">
-              <h3 className="text-xs font-bold tracking-wide text-zinc-500 uppercase mb-4 flex items-center gap-1.5">
-                <MessageSquare className="h-4 w-4 text-[#7C3AED]" /> Feedback Dispatch Portal
-              </h3>
+            {activeTab === "CGPA Calculator" && (
+              <div className="space-y-6">
 
-              {feedbackSubmitted ? (
-                <div className="py-6 text-center text-emerald-400 space-y-2">
-                  <Sparkles className="h-8 w-8 mx-auto animate-bounce text-[#06B6D4]" />
-                  <h4 className="text-sm font-bold">Feedback Registered!</h4>
-                  <p className="text-xs text-zinc-400">Thank you for making Acadsphere better.</p>
+                {/* Quick Metrics Panels */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                  <div className="glass-card rounded-2xl p-5 text-center">
+                    <span className="block text-[10px] font-bold text-zinc-500 uppercase mb-1">Cumulative CGPA</span>
+                    <span className="text-4xl font-extrabold text-[#7C3AED] tracking-tight">{overallCGPA > 0 ? overallCGPA.toFixed(2) : "0.00"}</span>
+                  </div>
+                  <div className="glass-card rounded-2xl p-5 text-center">
+                    <span className="block text-[10px] font-bold text-zinc-500 uppercase mb-1">Total Credits Earned</span>
+                    <span className="text-4xl font-extrabold text-[#06B6D4] tracking-tight">{overallCredits} pts</span>
+                  </div>
+                  <div className="glass-card rounded-2xl p-5 text-center flex flex-col justify-center">
+                    <span className="block text-[10px] font-bold text-zinc-500 uppercase mb-1">Batch Standing</span>
+                    <span className="text-xs font-semibold text-zinc-400 mt-1">{getPerformanceSummary(overallCGPA)}</span>
+                  </div>
                 </div>
-              ) : (
-                <form onSubmit={handleSubmitFeedback} className="space-y-5">
-                  
-                  {/* Stars Widget */}
-                  <div>
-                    <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-2">Rating Scale</label>
-                    <div className="flex items-center gap-2">
-                      {[1, 2, 3, 4, 5].map(val => (
-                        <button 
-                          key={val} 
-                          type="button"
-                          onClick={() => setFeedbackRating(val)}
-                          className="p-1 hover:scale-110 transition-transform"
+
+                {/* Semester selector & Input Form */}
+                <div className="glass-card rounded-2xl p-5">
+                  <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6 pb-4 border-b border-zinc-800/40">
+                    <h3 className="text-xs font-bold tracking-wide text-zinc-500 uppercase">Grade Ledger Panel</h3>
+
+                    <div className="flex items-center gap-1.5 overflow-x-auto py-1">
+                      {[1, 2, 3, 4, 5, 6, 7, 8].map(sem => (
+                        <button
+                          key={sem}
+                          onClick={() => setSelectedSemester(sem)}
+                          className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-all ${selectedSemester === sem ? "bg-[#7C3AED] text-white border-transparent" : "border-zinc-800 hover:bg-zinc-800 text-zinc-400"}`}
                         >
-                          <Star className={`h-6 w-6 transition-all ${val <= feedbackRating ? "fill-amber-400 text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.3)]" : "text-zinc-600"}`} />
+                          Sem {sem}
                         </button>
                       ))}
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1.5">Your Message</label>
-                    <textarea 
-                      rows={4}
-                      value={feedbackMessage}
-                      onChange={e => setFeedbackMessage(e.target.value)}
-                      placeholder="Write your suggestions, bug reports, or feature requests here..."
-                      className={`w-full rounded-lg border px-3.5 py-2.5 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
-                    />
+                  {/* Add grade input form */}
+                  <form onSubmit={handleAddCGPASubject} className="grid grid-cols-1 sm:grid-cols-4 gap-4 items-end">
+                    <div className="sm:col-span-2">
+                      <label htmlFor="input-subject-title-11" className="block text-[10px] font-bold text-zinc-400 uppercase mb-1.5">Subject Title</label>
+                      <input id="input-subject-title-11"
+                        type="text"
+                        value={cgSubjectName}
+                        onChange={e => setCgSubjectName(e.target.value)}
+                        placeholder="Engineering Mathematics III"
+                        className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="input-course-credit-value-12" className="block text-[10px] font-bold text-zinc-400 uppercase mb-1.5">Course Credit Value</label>
+                      <input id="input-course-credit-value-12"
+                        type="number"
+                        value={cgCredits}
+                        onChange={e => setCgCredits(e.target.value)}
+                        min="1"
+                        max="10"
+                        step="1"
+                        placeholder="3"
+                        className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="input-awarded-grade-scale-13" className="block text-[10px] font-bold text-zinc-400 uppercase mb-1.5">Awarded Grade Scale</label>
+                      <select id="input-awarded-grade-scale-13"
+                        value={cgGrade}
+                        onChange={e => setCgGrade(e.target.value as CGPASubject["grade"])}
+                        className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
+                      >
+                        <option>O</option>
+                        <option>A+</option>
+                        <option>A</option>
+                        <option>B+</option>
+                        <option>B</option>
+                        <option>C</option>
+                        <option>F</option>
+                      </select>
+                    </div>
+
+                    <div className="sm:col-span-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <p className="text-[10px] text-zinc-500 font-medium">
+                        SGPA = total credit-weighted grade points divided by total credits.
+                      </p>
+                      <div className="flex justify-end gap-3">
+                        {cgEditingId && (
+                          <button
+                            type="button"
+                            onClick={cancelCGPAEdit}
+                            className="rounded-lg border border-zinc-800 px-4 py-2.5 text-xs font-bold text-zinc-400 hover:bg-zinc-800/60 transition-all"
+                          >
+                            Cancel Edit
+                          </button>
+                        )}
+                        <button
+                          type="submit"
+                          className="rounded-lg bg-[#7C3AED] hover:bg-[#6D28D9] px-4 py-2.5 text-xs font-bold text-white transition-all shadow-md"
+                        >
+                          {cgEditingId ? "Update Grade Course" : "Log Grade Course"}
+                        </button>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+
+                {/* Semester Grades Ledger Table */}
+                <div className="glass-card rounded-2xl p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-xs font-bold tracking-wide text-zinc-500 uppercase">Grades Sheet - Semester {selectedSemester}</h4>
+                    <div className="text-xs font-bold text-zinc-400 bg-zinc-800/40 border border-zinc-800 px-3 py-1 rounded-lg">
+                      SGPA: <strong className="text-[#06B6D4]">{getSGPA(selectedSemester).toFixed(2)}</strong>
+                    </div>
                   </div>
 
-                  <button 
-                    type="submit"
-                    className="w-full rounded-lg bg-[#7C3AED] hover:bg-[#6D28D9] px-4 py-2.5 text-xs font-bold text-white transition-all shadow-md shadow-[#7C3AED]/10 active:scale-95"
-                  >
-                    Submit Feedback
-                  </button>
-
-                </form>
-              )}
-            </div>
-
-            {/* History timeline */}
-            {feedbackHistory.length > 0 && (
-              <div className="glass-card rounded-2xl p-5">
-                <h3 className="text-xs font-bold tracking-wide text-zinc-500 uppercase mb-4">Transmission History</h3>
-                
-                <div className="space-y-4">
-                  {feedbackHistory.map(item => (
-                    <div key={item.id} className="p-3.5 border border-zinc-800 rounded-xl bg-zinc-900/10 space-y-2">
-                      <div className="flex items-center justify-between text-[10px] text-zinc-500 font-bold">
-                        <span className="flex items-center gap-1 text-amber-400">
-                          {Array.from({ length: item.rating }).map((_, i) => (
-                            <Star key={i} className="h-3 w-3 fill-current" />
+                  {cgpaSubjects.filter(s => s.semester === selectedSemester).length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <table className="min-w-[560px] w-full text-left text-xs border-collapse">
+                        <thead>
+                          <tr className="border-b border-zinc-800 text-zinc-500">
+                            <th className="py-2.5">Subject</th>
+                            <th className="py-2.5">Credits</th>
+                            <th className="py-2.5">Grade</th>
+                            <th className="py-2.5">Points Value</th>
+                            <th className="py-2.5 text-right">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {cgpaSubjects.filter(s => s.semester === selectedSemester).map(item => (
+                            <tr key={item.id} className="border-b border-zinc-800/50 hover:bg-zinc-800/10">
+                              <td className="py-3 font-semibold text-white">{item.subjectName}</td>
+                              <td className="py-3 text-zinc-400">{item.credits}</td>
+                              <td className="py-3 font-extrabold text-[#7C3AED]">{item.grade}</td>
+                              <td className="py-3 text-zinc-400">{gradePoints[item.grade]}</td>
+                              <td className="py-3 text-right">
+                                <button
+                                  onClick={() => handleEditCGPASubject(item)}
+                                  className="text-zinc-600 hover:text-[#06B6D4] p-1.5 transition-all"
+                                  title="Edit course grade"
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteCGPASubject(item.id)}
+                                  className="text-zinc-600 hover:text-red-500 p-1.5 transition-all"
+                                  title="Delete course grade"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </td>
+                            </tr>
                           ))}
-                        </span>
-                        <span>{item.date}</span>
-                      </div>
-                      <p className="text-xs text-zinc-300 leading-normal">{item.message}</p>
+                        </tbody>
+                      </table>
                     </div>
-                  ))}
+                  ) : (
+                    <p className="text-xs text-zinc-500 text-center py-8 border border-dashed border-zinc-800 rounded-xl">
+                      No courses logged under Semester {selectedSemester}. Enter course details to compile SGPAs.
+                    </p>
+                  )}
                 </div>
+
               </div>
             )}
 
-          </div>
-        )}
-
-        {/* ----------------------------------------------------
-            TAB 11: SETTINGS
+            {/* ----------------------------------------------------
+            TAB 5: MARKS PREDICTOR
             ---------------------------------------------------- */}
-        {activeTab === "Settings" && (
-          <div className="space-y-6 max-w-2xl">
-            <div className="glass-card p-6 space-y-6">
-              <h3 className="text-sm font-bold tracking-wide text-zinc-500 uppercase">Profile Settings</h3>
-              
-              <form onSubmit={handleSaveProfile} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-[10px] uppercase font-bold text-zinc-400">Full Name</label>
-                    <input 
-                      type="text" 
-                      value={editFullName} 
-                      onChange={e => setEditFullName(e.target.value)} 
-                      placeholder="Your Full Name"
-                      className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] uppercase font-bold text-zinc-400">College / Institution</label>
-                    <input 
-                      type="text" 
-                      value={editCollege} 
-                      onChange={e => setEditCollege(e.target.value)} 
-                      placeholder="Your College / Institution"
-                      className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] uppercase font-bold text-zinc-400">Email Address (Locked)</label>
-                    <div className="w-full px-4 py-3 bg-zinc-900/10 dark:bg-zinc-900/20 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs font-semibold text-zinc-500">
-                      {currentUser.email}
+            {activeTab === "Marks Predictor" && (
+              <div className="space-y-6">
+
+                {/* Input target panel */}
+                <div className="glass-card rounded-2xl p-5">
+                  <h3 className="text-xs font-bold tracking-wide text-zinc-500 uppercase mb-4 flex items-center gap-1.5">
+                    <Plus className="h-4 w-4 text-[#7C3AED]" /> Target Grade Calibration Form
+                  </h3>
+
+                  <form onSubmit={handleAddPrediction} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+                    <div>
+                      <label htmlFor="input-course-name-14" className="block text-[10px] font-bold text-zinc-400 uppercase mb-1.5">Course Name</label>
+                      <input id="input-course-name-14"
+                        type="text"
+                        value={predSubject}
+                        onChange={e => setPredSubject(e.target.value)}
+                        placeholder="Operating Systems"
+                        className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="input-internals-secured-e-g-40-15" className="block text-[10px] font-bold text-zinc-400 uppercase mb-1.5">Internals Secured (e.g. 40)</label>
+                      <input id="input-internals-secured-e-g-40-15"
+                        type="number"
+                        value={predInternalScore}
+                        onChange={e => setPredInternalScore(e.target.value)}
+                        min="0"
+                        step="0.01"
+                        placeholder="40"
+                        className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="input-internals-total-cap-e-g-60-16" className="block text-[10px] font-bold text-zinc-400 uppercase mb-1.5">Internals Total Cap (e.g. 60)</label>
+                      <input id="input-internals-total-cap-e-g-60-16"
+                        type="number"
+                        value={predInternalTotal}
+                        onChange={e => setPredInternalTotal(e.target.value)}
+                        min="0.01"
+                        step="0.01"
+                        placeholder="60"
+                        className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="input-external-total-cap-17" className="block text-[10px] font-bold text-zinc-400 uppercase mb-1.5">External Total Cap</label>
+                      <input id="input-external-total-cap-17"
+                        type="number"
+                        value={predExternalTotal}
+                        onChange={e => setPredExternalTotal(e.target.value)}
+                        min="0.01"
+                        step="0.01"
+                        placeholder="100"
+                        className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="input-target-grade-boundary-18" className="block text-[10px] font-bold text-zinc-400 uppercase mb-1.5">Target Grade Boundary</label>
+                      <select id="input-target-grade-boundary-18"
+                        value={predTargetGrade}
+                        onChange={e => setPredTargetGrade(e.target.value as MarksPrediction["targetGrade"])}
+                        className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
+                      >
+                        <option>O</option>
+                        <option>A+</option>
+                        <option>A</option>
+                        <option>B+</option>
+                        <option>B</option>
+                        <option>C</option>
+                      </select>
+                    </div>
+
+                    <div className="lg:col-span-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <div className="flex-1 text-[10px] text-zinc-500 font-medium pb-2 italic self-center">
+                        * Calculation scale assumes Internals = 60%, Externals = 40% grade weighting.
+                      </div>
+                      <div className="flex justify-end gap-3">
+                        {predEditingId && (
+                          <button
+                            type="button"
+                            onClick={cancelPredictionEdit}
+                            className="rounded-lg border border-zinc-800 px-4 py-2.5 text-xs font-bold text-zinc-400 hover:bg-zinc-800/60 transition-all"
+                          >
+                            Cancel Edit
+                          </button>
+                        )}
+                        <button
+                          type="submit"
+                          className="rounded-lg bg-[#7C3AED] hover:bg-[#6D28D9] px-4 py-2.5 text-xs font-bold text-white transition-all shadow-md"
+                        >
+                          {predEditingId ? "Update Prediction" : "Generate Prediction"}
+                        </button>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+
+                {/* Predictions List Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {predictions.map(item => {
+                    const requirement = getExternalRequirement(item);
+
+                    return (
+                      <div key={item.id} className="glass-card rounded-2xl p-5 flex flex-col justify-between border-t-2 border-t-[#06B6D4]">
+                        <div>
+                          <div className="flex items-start justify-between mb-4">
+                            <div>
+                              <span className="text-base font-extrabold text-white block">{item.subject}</span>
+                              <span className="text-[10px] text-zinc-500 font-semibold">Current Internals: {item.internalScore} / {item.internalTotal} ({requirement.internalContrib.toFixed(1)} / 60.0 pts)</span>
+                            </div>
+
+                            <div className="text-right">
+                              <span className="text-[10px] font-bold text-zinc-500 block uppercase">Target Grade</span>
+                              <span className="text-lg font-extrabold text-[#7C3AED] block">{item.targetGrade} ({requirement.targetBoundary}%)</span>
+                            </div>
+                          </div>
+
+                          {/* Calculations Details block */}
+                          <div className="space-y-3 p-3 bg-zinc-800/30 rounded-xl border border-zinc-800">
+                            <div className="flex justify-between text-xs">
+                              <span className="text-zinc-400">Needed External Score:</span>
+                              <span className={`font-bold ${requirement.feasible ? "text-white" : "text-rose-500"}`}>
+                                {requirement.alreadySecured ? "Already secured" : requirement.feasible ? `${requirement.rawExternalNeeded} / ${item.externalTotal}` : "Impossible"}
+                              </span>
+                            </div>
+                            <div className="flex justify-between text-[10px]">
+                              <span className="text-zinc-500">Weighted points still needed:</span>
+                              <span className="font-bold text-zinc-300">{Math.max(0, requirement.neededExternalContrib).toFixed(1)} / 40</span>
+                            </div>
+
+                            <div className="w-full h-2 bg-zinc-800 rounded-full overflow-hidden">
+                              <div
+                                className={`h-full rounded-full transition-all ${requirement.feasible ? "bg-[#7C3AED]" : "bg-red-500"}`}
+                                style={{ width: `${Math.min(100, Math.max(0, (requirement.rawExternalNeeded / item.externalTotal) * 100))}%` }}
+                              />
+                            </div>
+
+                            {!requirement.feasible && (
+                              <p className="text-[10px] text-red-500 font-bold leading-normal">
+                                Target grade is mathematically out of bounds. Reduce the target grade or confirm your exam totals.
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between mt-5 pt-3 border-t border-zinc-800/40">
+                          <span className="text-[10px] font-medium text-zinc-500 italic">
+                            {requirement.alreadySecured ? "Current internals already meet this target." : requirement.feasible ? "Use this as your minimum final exam target." : "Target grade warning active."}
+                          </span>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => handleEditPrediction(item)}
+                              className="text-zinc-600 hover:text-[#06B6D4] p-1.5 transition-all"
+                              title="Edit prediction"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeletePrediction(item.id)}
+                              className="text-zinc-600 hover:text-red-500 p-1.5 transition-all"
+                              title="Delete prediction"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {predictions.length === 0 && (
+                    <div className="md:col-span-2 text-center border border-dashed border-zinc-800 rounded-2xl p-8">
+                      <p className="text-sm font-bold text-zinc-300">No marks predictions yet.</p>
+                      <p className="text-xs text-zinc-500 mt-1">Add a course to see the exact external score needed for your target grade.</p>
+                    </div>
+                  )}
+                </div>
+
+              </div>
+            )}
+
+            {/* ----------------------------------------------------
+            TAB 6: CALENDAR MODULE
+            ---------------------------------------------------- */}
+            {activeTab === "Calendar" && (
+              <div className="space-y-6">
+
+                <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+
+                  {/* Core Calendar UI Grid */}
+                  <div className="glass-card rounded-2xl p-5 xl:col-span-2">
+                    <div className="flex items-center justify-between mb-6">
+                      <h3 className="text-xs font-bold tracking-wide text-zinc-500 uppercase">Academic Calendar</h3>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setCurrentCalendarMonth(new Date(currentCalendarMonth.getFullYear(), currentCalendarMonth.getMonth() - 1))}
+                          className="px-2.5 py-1.5 text-xs border border-zinc-800 hover:bg-zinc-800 rounded-lg text-zinc-400 font-bold"
+                        >
+                          Prev
+                        </button>
+                        <span className="text-xs font-bold text-white px-2">
+                          {currentCalendarMonth.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
+                        </span>
+                        <button
+                          onClick={() => setCurrentCalendarMonth(new Date(currentCalendarMonth.getFullYear(), currentCalendarMonth.getMonth() + 1))}
+                          className="px-2.5 py-1.5 text-xs border border-zinc-800 hover:bg-zinc-800 rounded-lg text-zinc-400 font-bold"
+                        >
+                          Next
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Calendar monthly block */}
+                    <div className="grid grid-cols-7 gap-1 sm:gap-2 text-center text-xs font-bold mb-2 text-zinc-500 uppercase tracking-wider text-[9px] sm:text-[10px]">
+                      {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(d => (
+                        <div key={d} className="py-1">{d}</div>
+                      ))}
+                    </div>
+
+                    <div className="grid grid-cols-7 gap-1 sm:gap-2">
+                      {/* Offsets */}
+                      {Array.from({ length: startDayOffset }).map((_, i) => (
+                        <div key={`offset-${i}`} className="h-10 sm:h-16 border border-zinc-800/10 rounded-lg" />
+                      ))}
+
+                      {/* Month days */}
+                      {calendarDays.map(dayObj => {
+                        const y = dayObj.getFullYear();
+                        const m = String(dayObj.getMonth() + 1).padStart(2, '0');
+                        const d = String(dayObj.getDate()).padStart(2, '0');
+                        const dateStr = `${y}-${m}-${d}`;
+                        const dayEvents = calendarEvents.filter(e => e.date === dateStr);
+                        const isToday = new Date().toDateString() === dayObj.toDateString();
+
+                        return (
+                          <div
+                            key={dateStr}
+                            className={`min-h-[64px] border p-1 rounded-lg flex flex-col justify-between transition-all ${isToday ? "border-[#7C3AED] bg-[#7C3AED]/5" : "border-zinc-800 hover:border-zinc-700 bg-zinc-900/10"}`}
+                          >
+                            <span className={`text-[10px] font-bold block text-left ${isToday ? "text-[#7C3AED]" : "text-zinc-500"}`}>
+                              {dayObj.getDate()}
+                            </span>
+
+                            <div className="space-y-1 mt-1">
+                              {dayEvents.slice(0, 2).map(ev => {
+                                const badgeColors = {
+                                  exam: "bg-red-500/20 text-red-400 border-red-500/20",
+                                  deadline: "bg-amber-500/20 text-amber-400 border-amber-500/20",
+                                  reminder: "bg-purple-500/20 text-purple-400 border-purple-500/20",
+                                  holiday: "bg-[#06B6D4]/20 text-[#06B6D4] border-[#06B6D4]/20"
+                                };
+                                return (
+                                  <div
+                                    key={ev.id}
+                                    className={`text-[8px] px-1 rounded truncate border font-medium ${badgeColors[ev.type]}`}
+                                    title={ev.title}
+                                  >
+                                    {ev.title}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] uppercase font-bold text-zinc-400">Academic Year</label>
-                    <select 
-                      value={editYear} 
-                      onChange={e => setEditYear(e.target.value)}
-                      className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
+
+                  {/* Add event Form */}
+                  <div className="space-y-6">
+
+                    <div className="glass-card rounded-2xl p-5">
+                      <h3 className="text-xs font-bold tracking-wide text-zinc-500 uppercase mb-4 flex items-center gap-1.5">
+                        <Plus className="h-4 w-4 text-[#7C3AED]" /> {calEditingId ? "Update Task Event" : "Record Task Event"}
+                      </h3>
+
+                      <form onSubmit={handleAddCalendarEvent} className="space-y-4">
+                        <div>
+                          <label htmlFor="input-event-summary-19" className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Event Summary</label>
+                          <input id="input-event-summary-19"
+                            type="text"
+                            value={calTitle}
+                            onChange={e => setCalTitle(e.target.value)}
+                            placeholder="Study Group Session"
+                            className={`w-full rounded-lg border px-3 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
+                          />
+                        </div>
+                        <div>
+                          <label htmlFor="input-target-date-dd-mm-yyyy-format-20" className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Target Date - DD-MM-YYYY format</label>
+                          <input id="input-target-date-dd-mm-yyyy-format-20"
+                            type="date"
+                            value={calDate}
+                            onChange={e => setCalDate(e.target.value)}
+                            className={`w-full rounded-lg border px-3 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
+                          />
+                        </div>
+                        <div>
+                          <label htmlFor="input-type-categories-21" className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Type Categories</label>
+                          <select id="input-type-categories-21"
+                            value={calType}
+                            onChange={e => setCalType(e.target.value as CalendarEvent["type"])}
+                            className={`w-full rounded-lg border px-3 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
+                          >
+                            <option>exam</option>
+                            <option>deadline</option>
+                            <option>reminder</option>
+                            <option>holiday</option>
+                          </select>
+                        </div>
+
+                        <div className="flex gap-3">
+                          {calEditingId && (
+                            <button
+                              type="button"
+                              onClick={cancelCalendarEdit}
+                              className="flex-1 rounded-lg border border-zinc-800 px-4 py-2.5 text-xs font-bold text-zinc-400 hover:bg-zinc-800/60 transition-all"
+                            >
+                              Cancel
+                            </button>
+                          )}
+                          <button
+                            type="submit"
+                            className="flex-1 rounded-lg bg-[#7C3AED] hover:bg-[#6D28D9] px-4 py-2.5 text-xs font-bold text-white transition-all shadow-md"
+                          >
+                            {calEditingId ? "Update Event" : "Log Event"}
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+
+                    {/* Event lists logger details */}
+                    <div className="glass-card rounded-2xl p-5">
+                      <h3 className="text-xs font-bold tracking-wide text-zinc-500 uppercase mb-3">Academic Milestones</h3>
+
+                      <div className="space-y-2.5 overflow-y-auto max-h-48 pr-1">
+                        {calendarEvents.filter(e => e.userId !== 'admin').length > 0 ? calendarEvents.filter(e => e.userId !== 'admin').map(ev => (
+                          <div key={ev.id} className="flex items-center justify-between p-2.5 border border-zinc-800 rounded-lg bg-zinc-900/10">
+                            <div>
+                              <span className="text-xs font-bold text-white block truncate max-w-[120px]">{ev.title}</span>
+                              <span className="text-[9px] text-zinc-500 block font-semibold">{ev.date} &bull; {ev.type}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => handleEditCalendarEvent(ev)}
+                                className="text-zinc-600 hover:text-[#06B6D4] transition-all p-1"
+                                title="Edit event"
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteCalendarEvent(ev.id)}
+                                className="text-zinc-600 hover:text-red-500 transition-all p-1"
+                                title="Delete event"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        )) : (
+                          <p className="text-xs text-zinc-500 text-center py-6 border border-dashed border-zinc-800 rounded-xl">
+                            No personal events yet. Add deadlines, exams, reminders, or holidays here.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                  </div>
+
+                </div>
+
+              </div>
+            )}
+
+            {/* ----------------------------------------------------
+            TAB 7: EVENTS / NETWORK MODULE
+            ---------------------------------------------------- */}
+            {activeTab === "Events / Network" && (
+              <div className="space-y-6">
+
+                {/* Filter Controls Panel (Opportunity Radar) */}
+                <div className="glass-card rounded-2xl p-5 flex flex-col lg:flex-row lg:items-center gap-5 justify-between">
+                  <div className="flex-1">
+                    <h3 className="text-xs font-bold tracking-wide text-zinc-500 uppercase mb-3 flex items-center gap-1.5">
+                      <Sparkles className="h-4 w-4 text-[#7C3AED]" /> Technical Field Focus
+                    </h3>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {["All Fields"].map(field => (
+                        <button
+                          key={field}
+                          onClick={() => setRadarFieldFilter(field)}
+                          className={`px-3.5 py-1.5 text-xs font-bold rounded-lg border transition-all ${radarFieldFilter === field ? "bg-[#7C3AED] text-white border-transparent shadow-md shadow-[#7C3AED]/20" : "border-zinc-800 bg-zinc-900/30 hover:bg-zinc-800 text-zinc-400"}`}
+                        >
+                          {field}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="lg:border-l lg:border-zinc-800/60 lg:pl-5">
+                    <h3 className="text-xs font-bold tracking-wide text-zinc-500 uppercase mb-3 flex items-center gap-1.5">
+                      <Briefcase className="h-4 w-4 text-[#06B6D4]" /> Event Type
+                    </h3>
+                    <select
+                      value={radarTypeFilter}
+                      onChange={(e) => setRadarTypeFilter(e.target.value)}
+                      className={`w-full lg:w-48 rounded-lg border px-3 py-2 text-xs font-bold transition-all outline-none ${isDarkMode ? "border-zinc-800 bg-[#121214] text-white focus:border-[#06B6D4]" : "border-zinc-300 bg-zinc-50 text-zinc-900 focus:border-[#06B6D4]"}`}
                     >
-                      <option>I Year</option>
-                      <option>II Year</option>
-                      <option>III Year</option>
-                      <option>IV Year</option>
+                      <option value="All Types">All Types</option>
+                      <option value="Hackathons">Hackathons</option>
+                      <option value="Competitions">Competitions</option>
+                      <option value="Workshops">Workshops</option>
                     </select>
                   </div>
                 </div>
 
-                <div className="flex justify-end pt-2">
-                  <button 
-                    type="submit"
-                    disabled={isSavingProfile}
-                    className="rounded-lg bg-[#7C3AED] hover:bg-[#6D28D9] px-4 py-2.5 text-xs font-bold text-white transition-all shadow-md active:scale-95 disabled:opacity-50"
-                  >
-                    {isSavingProfile ? "Saving changes..." : "Save Profile Settings"}
-                  </button>
-                </div>
-              </form>
-            </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {filteredEvents.length > 0 ? (
+                    filteredEvents.map(ev => (
+                      <div key={ev.id} className="glass-card rounded-2xl overflow-hidden flex flex-col justify-between hover:border-[#7C3AED]/40 transition-all group">
+                        <div className="relative">
+                          {ev.image ? (
+                            <img
+                              src={ev.image}
+                              alt={ev.title}
+                              className="h-44 w-full object-cover border-b border-zinc-800/40 group-hover:scale-105 transition-transform duration-500"
+                            />
+                          ) : (
+                            <div className="h-44 w-full border-b border-zinc-800/40 bg-gradient-to-br from-[#7C3AED]/35 via-[#18121f] to-[#06B6D4]/20" aria-hidden="true" />
+                          )}
+                          <div className="absolute inset-0 bg-gradient-to-t from-[#09090B] via-transparent to-transparent opacity-80" />
+                          <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between">
+                            <span className="text-[10px] font-extrabold text-white uppercase bg-[#7C3AED]/80 px-2 py-0.5 rounded backdrop-blur-md">
+                              {ev.type}
+                            </span>
+                            <span className="text-[10px] text-zinc-300 font-bold drop-shadow-md">{ev.date}</span>
+                          </div>
+                        </div>
 
-            <div className="glass-card p-6 space-y-4">
-              <h3 className="text-sm font-bold tracking-wide text-zinc-500 uppercase">Preferences</h3>
-              
-              <div className="flex items-center justify-between py-2">
-                <div className="flex flex-col">
-                  <span className="text-xs font-bold">Theme Mode</span>
-                  <span className="text-[10px] text-zinc-500 mt-0.5">Toggle between dark-first and light mode.</span>
-                </div>
-                <button
-                  onClick={toggleTheme}
-                  className={`px-4 py-2 text-xs font-bold rounded-lg border transition-all ${isDarkMode ? "border-zinc-800 bg-zinc-900 text-[#06B6D4]" : "border-zinc-200 bg-zinc-100 text-zinc-600"}`}
-                >
-                  {isDarkMode ? "Dark Mode" : "Light Mode"}
-                </button>
-              </div>
+                        <div className="p-5 flex-1 flex flex-col justify-between">
+                          <div>
+                            <h4 className="text-base font-extrabold text-white leading-snug">{ev.title}</h4>
+                            <span className="text-[11px] text-[#06B6D4] font-bold block mt-1.5 mb-3">{ev.organizer}</span>
+                            <p className="text-xs text-zinc-500 leading-relaxed mb-4">{ev.description}</p>
+                          </div>
 
-              <div className="flex items-center justify-between py-2 border-t border-zinc-200/50 dark:border-zinc-800/40">
-                <div className="flex flex-col">
-                  <span className="text-xs font-bold">Database Synchronizer</span>
-                  <span className="text-[10px] text-zinc-500 mt-0.5">Force sync local storage with live database.</span>
+                          <button
+                            onClick={() => applyForEvent(ev.id, ev.title, ev.applyLink)}
+                            className={`w-full rounded-lg py-2.5 text-xs font-bold transition-all border ${appliedEvents.includes(ev.id) ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400 font-bold" : "bg-[#7C3AED] hover:bg-[#6D28D9] border-transparent text-white active:scale-95"}`}
+                          >
+                            {appliedEvents.includes(ev.id) ? "Registration Confirmed ✓" : "Register to Network"}
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="col-span-full py-16 text-center border border-zinc-800/40 border-dashed rounded-2xl bg-zinc-900/20">
+                      <Code2 className="h-8 w-8 text-zinc-600 mx-auto mb-3" />
+                      <p className="text-sm text-zinc-400 font-bold">No events found</p>
+                      <p className="text-xs text-zinc-500 mt-1">Try adjusting your field focus.</p>
+                    </div>
+                  )}
                 </div>
-                <button
-                  onClick={() => {
-                    db.syncUserData(currentUser.id).then(() => {
-                      triggerToast("Database cache re-synchronized!");
-                    });
-                  }}
-                  className="px-4 py-2 text-xs font-bold bg-[#7c5cff] hover:bg-[#6D28D9] text-white rounded-lg transition-all"
-                >
-                  Sync Now
-                </button>
-              </div>
-            </div>
-            {authProvider !== "google" && (
-              <div className="glass-card p-6 space-y-4">
-                <h3 className="text-sm font-bold tracking-wide text-zinc-500 uppercase">Change Password</h3>
-                <div className="flex items-center justify-between py-2">
-                  <div className="flex flex-col">
-                    <span className="text-xs font-bold">Update Account Security</span>
-                    <span className="text-[10px] text-zinc-500 mt-0.5">Modify your password securely using Supabase Auth.</span>
-                  </div>
-                  <button
-                    onClick={() => {
-                      setChangeCurrentPassword("");
-                      setChangeNewPassword("");
-                      setChangeConfirmNewPassword("");
-                      setPasswordUpdateError(null);
-                      setIsChangePasswordOpen(true);
-                    }}
-                    className="px-4 py-2 text-xs font-bold bg-[#7c5cff] hover:bg-[#6D28D9] text-white rounded-lg transition-all"
-                  >
-                    Change Password
-                  </button>
-                </div>
+
               </div>
             )}
-          </div>
-        )}
 
-        {/* ----------------------------------------------------
-            TAB 12: SUPPORT
+            {/* ----------------------------------------------------
+            TAB 8: INTERNSHIP MODULE
             ---------------------------------------------------- */}
-        {activeTab === "Support" && (
-          <div className="space-y-6 max-w-2xl">
-            <div className="glass-card p-6 space-y-4">
-              <h3 className="text-sm font-bold tracking-wide text-zinc-500 uppercase">Need Assistance?</h3>
-              <p className="text-xs text-zinc-400 leading-relaxed">
-                Welcome to the Acadsphere Support channel. If you have any technical questions, encounter bugs, or need help with course tracking or GPA predictors, please choose one of the options below.
-              </p>
+            {activeTab === "Internship" && (
+              <div className="space-y-6">
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
-                <div className="p-4 border border-zinc-200 dark:border-zinc-800 rounded-xl bg-zinc-900/10 space-y-2">
-                  <span className="text-xs font-bold block">Submit a Bug Report</span>
-                  <p className="text-[10px] text-zinc-500">File a bug directly to developers using our feedback module.</p>
-                  <button 
-                    onClick={() => setActiveTab("Feedback")} 
-                    className="text-[10px] font-bold text-[#7c5cff] hover:underline flex items-center gap-1 mt-1"
-                  >
-                    Go to Feedback <ChevronRight className="h-3 w-3 inline" />
-                  </button>
+                {/* Filter Controls Panel (Opportunity Radar) */}
+                <div className="glass-card rounded-2xl p-5 flex flex-col lg:flex-row lg:items-center gap-5 justify-between">
+                  <div className="flex-1">
+                    <h3 className="text-xs font-bold tracking-wide text-zinc-500 uppercase mb-3 flex items-center gap-1.5">
+                      <Sparkles className="h-4 w-4 text-[#7C3AED]" /> Technical Field Focus
+                    </h3>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {["All Fields"].map(field => (
+                        <button
+                          key={field}
+                          onClick={() => setRadarFieldFilter(field)}
+                          className={`px-3.5 py-1.5 text-xs font-bold rounded-lg border transition-all ${radarFieldFilter === field ? "bg-[#7C3AED] text-white border-transparent shadow-md shadow-[#7C3AED]/20" : "border-zinc-800 bg-zinc-900/30 hover:bg-zinc-800 text-zinc-400"}`}
+                        >
+                          {field}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
 
-                <div className="p-4 border border-zinc-200 dark:border-zinc-800 rounded-xl bg-zinc-900/10 space-y-2">
-                  <span className="text-xs font-bold block">Documentation & FAQ</span>
-                  <p className="text-[10px] text-zinc-500">Learn how skip margins are calculated and CGPA weights are handled.</p>
-                  <p className="text-[10px] font-medium text-zinc-500">Documentation is not available yet.</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {filteredInternships.length > 0 ? (
+                    filteredInternships.map(item => (
+                      <div key={item.id} className="glass-card rounded-2xl p-5 flex flex-col justify-between border-l-4 border-l-[#7C3AED] hover:border-l-[#06B6D4] transition-all">
+
+                        <div>
+                          <div className="flex items-start justify-between mb-4">
+                            <div>
+                              <h4 className="text-base font-extrabold text-white">{item.role}</h4>
+                              <span className="text-xs text-[#06B6D4] font-bold block mt-1">{item.company}</span>
+                            </div>
+
+                            <div className="h-10 w-10 rounded-xl bg-zinc-800 flex items-center justify-center font-black text-white border border-zinc-700 shadow-inner">
+                              {item.logo}
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3 mb-4 p-3 bg-zinc-800/20 rounded-xl border border-zinc-850">
+                            <div>
+                              <span className="block text-[9px] font-bold text-zinc-500 uppercase">Stipend Cap</span>
+                              <span className="text-xs font-extrabold text-white">{item.stipend}</span>
+                            </div>
+                            <div>
+                              <span className="block text-[9px] font-bold text-zinc-500 uppercase">Duration</span>
+                              <span className="text-xs font-bold text-zinc-400">{item.duration}</span>
+                            </div>
+                          </div>
+
+                          <div className="space-y-1 mb-5">
+                            <span className="block text-[9px] font-bold text-zinc-500 uppercase">Eligibility Criteria</span>
+                            <p className="text-xs text-zinc-400 leading-normal line-clamp-2">{item.eligibility}</p>
+                          </div>
+                        </div>
+
+                        <button
+                          onClick={() => applyForInternship(item.id, item.company, item.role, item.applyLink)}
+                          className={`w-full rounded-lg py-2.5 text-xs font-bold transition-all border ${appliedInternships.includes(item.id) ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400 font-bold" : "bg-[#7C3AED] hover:bg-[#6D28D9] border-transparent text-white active:scale-95"}`}
+                        >
+                          {appliedInternships.includes(item.id) ? "Application Transmitted ✓" : "Apply Instantly"}
+                        </button>
+
+                      </div>
+                    ))
+                  ) : (
+                    <div className="col-span-full py-16 text-center border border-zinc-800/40 border-dashed rounded-2xl bg-zinc-900/20">
+                      <Briefcase className="h-8 w-8 text-zinc-600 mx-auto mb-3" />
+                      <p className="text-sm text-zinc-400 font-bold">No internships found</p>
+                      <p className="text-xs text-zinc-500 mt-1">Try adjusting your field focus.</p>
+                    </div>
+                  )}
                 </div>
-              </div>
-            </div>
 
-            <div className="glass-card p-6 space-y-4">
-              <h3 className="text-sm font-bold tracking-wide text-zinc-500 uppercase">Ecosystem Verification</h3>
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-zinc-500">Supabase API Status</span>
-                <span className="text-emerald-500 font-bold flex items-center gap-1.5">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping" />
-                  Connected & Verified
-                </span>
               </div>
-              <div className="flex justify-between items-center text-xs border-t border-zinc-200/50 dark:border-zinc-800/40 pt-3">
-                <span className="text-zinc-500">Admin Console Sync</span>
-                <span className="text-emerald-500 font-bold flex items-center gap-1.5">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping" />
-                  Active (Port 3001)
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
+            )}
 
-      {/* Change Password Modal */}
-      {isChangePasswordOpen && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            onClick={() => setIsChangePasswordOpen(false)}
-          />
 
-          {/* Modal */}
-          <div
-            className={`relative w-full max-w-md overflow-hidden rounded-2xl border shadow-2xl flex flex-col ${
-              isDarkMode
-                ? "bg-[#14121b] border-zinc-800 shadow-purple-500/5 text-zinc-100"
-                : "bg-white border-zinc-200 shadow-purple-500/10 text-zinc-900"
-            }`}
-          >
-            {/* Header */}
-            <div className={`flex items-center justify-between p-5 border-b ${isDarkMode ? "border-zinc-800" : "border-zinc-200"}`}>
-              <div className="flex items-center gap-3">
-                <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-purple-600 to-cyan-500 flex items-center justify-center">
-                  <span className="material-symbols-outlined text-white">lock</span>
+            {/* ----------------------------------------------------
+            TAB 9: E-LIBRARY
+            ---------------------------------------------------- */}
+            {activeTab === "E-Library" && (
+              <div className="space-y-6">
+
+                {/* Search Filter and Category Board */}
+                <div className="glass-card rounded-2xl p-5 flex flex-col sm:flex-row items-center gap-4 justify-between">
+
+                  <div className="w-full sm:max-w-md">
+                    <input
+                      type="text"
+                      value={librarySearch}
+                      onChange={e => setLibrarySearch(e.target.value)}
+                      placeholder="Search notes, subjects, exams or keywords..."
+                      className={`w-full rounded-lg border px-4 py-2.5 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-1.5 overflow-x-auto py-1">
+                    {["All", "Notes", "PDF", "PYQ", "Book"].map(cat => (
+                      <button
+                        key={cat}
+                        onClick={() => setLibraryCategoryFilter(cat)}
+                        className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-all ${libraryCategoryFilter === cat ? "bg-[#7C3AED] text-white border-transparent" : "border-zinc-800 hover:bg-zinc-800 text-zinc-400"}`}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div>
-                  <h2 className="text-sm font-bold">Change Password</h2>
-                  <p className={`text-[10px] ${isDarkMode ? "text-zinc-500" : "text-zinc-400"}`}>
-                    Update your account security settings
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setIsChangePasswordOpen(false)}
-                className={`h-8 w-8 rounded-lg flex items-center justify-center transition-all ${
-                  isDarkMode ? "hover:bg-zinc-800 text-zinc-400" : "hover:bg-zinc-100 text-zinc-500"
-                }`}
-              >
-                <span className="material-symbols-outlined">close</span>
-              </button>
-            </div>
 
-            {/* Form */}
-            <form onSubmit={handlePasswordChange}>
-              {/* Body */}
-              <div className="p-5 space-y-4">
-                {passwordUpdateError && (
-                  <div className={`flex items-start gap-2.5 rounded-lg border p-3 text-xs ${
-                    isDarkMode ? "border-red-500/20 bg-red-500/5 text-red-400" : "border-red-200 bg-red-50 text-red-600"
-                  }`}>
-                    <span className="material-symbols-outlined text-red-500 select-none">error</span>
-                    <span>{passwordUpdateError}</span>
+                {/* Library Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredLibrary.length > 0 ? (
+                    filteredLibrary.map(item => (
+                      <div key={item.id} className="glass-card rounded-2xl p-5 flex flex-col justify-between hover:border-[#06B6D4]/50 transition-all">
+
+                        <div>
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="text-[9px] font-extrabold text-[#7C3AED] uppercase bg-[#7C3AED]/10 px-2 py-0.5 rounded border border-[#7C3AED]/20">
+                              {item.type}
+                            </span>
+                            <span className="text-[10px] text-zinc-500 font-bold">{item.size}</span>
+                          </div>
+
+                          <h4 className="text-sm font-extrabold text-white leading-snug tracking-tight mb-2">{item.title}</h4>
+                          <p className="text-[11px] text-zinc-400 font-semibold">{item.subject} &bull; {item.semester}</p>
+                        </div>
+
+                        <button
+                          onClick={() => triggerToast(`Downloading: ${item.title}...`)}
+                          className="mt-5 w-full flex items-center justify-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-900/40 hover:bg-zinc-850 hover:border-zinc-700 py-2.5 text-xs font-bold text-white transition-all active:scale-95"
+                        >
+                          <Download className="h-3.5 w-3.5 text-[#06B6D4]" />
+                          Download Resource
+                        </button>
+
+                      </div>
+                    ))
+                  ) : (
+                    <div className="col-span-full py-16 text-center">
+                      <p className="text-xs text-zinc-500 font-semibold italic">No matched academic resources. Adjust filtering query.</p>
+                    </div>
+                  )}
+                </div>
+
+              </div>
+            )}
+
+            {/* ----------------------------------------------------
+            TAB 10: FEEDBACK MODULE
+            ---------------------------------------------------- */}
+            {activeTab === "Feedback" && (
+              <div className="space-y-6 max-w-xl mx-auto">
+
+                <div className="glass-card rounded-2xl p-5">
+                  <h3 className="text-xs font-bold tracking-wide text-zinc-500 uppercase mb-4 flex items-center gap-1.5">
+                    <MessageSquare className="h-4 w-4 text-[#7C3AED]" /> Feedback Dispatch Portal
+                  </h3>
+
+                  {feedbackSubmitted ? (
+                    <div className="py-6 text-center text-emerald-400 space-y-2">
+                      <Sparkles className="h-8 w-8 mx-auto animate-bounce text-[#06B6D4]" />
+                      <h4 className="text-sm font-bold">Feedback Registered!</h4>
+                      <p className="text-xs text-zinc-400">Thank you for making Acadsphere better.</p>
+                    </div>
+                  ) : (
+                    <form onSubmit={handleSubmitFeedback} className="space-y-5">
+
+                      {/* Stars Widget */}
+                      <div>
+                        <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-2">Rating Scale</label>
+                        <div className="flex items-center gap-2">
+                          {[1, 2, 3, 4, 5].map(val => (
+                            <button
+                              key={val}
+                              type="button"
+                              onClick={() => setFeedbackRating(val)}
+                              className="p-1 hover:scale-110 transition-transform"
+                            >
+                              <Star className={`h-6 w-6 transition-all ${val <= feedbackRating ? "fill-amber-400 text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.3)]" : "text-zinc-600"}`} />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label htmlFor="input-your-message-22" className="block text-[10px] font-bold text-zinc-400 uppercase mb-1.5">Your Message</label>
+                        <textarea id="input-your-message-22"
+                          rows={4}
+                          value={feedbackMessage}
+                          onChange={e => setFeedbackMessage(e.target.value)}
+                          placeholder="Write your suggestions, bug reports, or feature requests here..."
+                          className={`w-full rounded-lg border px-3.5 py-2.5 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
+                        />
+                      </div>
+
+                      <button
+                        type="submit"
+                        className="w-full rounded-lg bg-[#7C3AED] hover:bg-[#6D28D9] px-4 py-2.5 text-xs font-bold text-white transition-all shadow-md shadow-[#7C3AED]/10 active:scale-95"
+                      >
+                        Submit Feedback
+                      </button>
+
+                    </form>
+                  )}
+                </div>
+
+                {/* History timeline */}
+                {feedbackHistory.length > 0 && (
+                  <div className="glass-card rounded-2xl p-5">
+                    <h3 className="text-xs font-bold tracking-wide text-zinc-500 uppercase mb-4">Transmission History</h3>
+
+                    <div className="space-y-4">
+                      {feedbackHistory.map(item => (
+                        <div key={item.id} className="p-3.5 border border-zinc-800 rounded-xl bg-zinc-900/10 space-y-2">
+                          <div className="flex items-center justify-between text-[10px] text-zinc-500 font-bold">
+                            <span className="flex items-center gap-1 text-amber-400">
+                              {Array.from({ length: item.rating }).map((_, i) => (
+                                <Star key={i} className="h-3 w-3 fill-current" />
+                              ))}
+                            </span>
+                            <span>{item.date}</span>
+                          </div>
+                          <p className="text-xs text-zinc-300 leading-normal">{item.message}</p>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
 
-                <div className="space-y-1">
-                  <label className="text-[10px] uppercase font-bold text-zinc-400">Current Password</label>
-                  <input
-                    type="password"
-                    value={changeCurrentPassword}
-                    onChange={e => setChangeCurrentPassword(e.target.value)}
-                    placeholder="Enter current password"
-                    className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[10px] uppercase font-bold text-zinc-400">New Password</label>
-                  <input
-                    type="password"
-                    value={changeNewPassword}
-                    onChange={e => setChangeNewPassword(e.target.value)}
-                    placeholder="At least 6 characters"
-                    className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[10px] uppercase font-bold text-zinc-400">Confirm New Password</label>
-                  <input
-                    type="password"
-                    value={changeConfirmNewPassword}
-                    onChange={e => setChangeConfirmNewPassword(e.target.value)}
-                    placeholder="Re-enter new password"
-                    className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
-                  />
-                </div>
               </div>
+            )}
 
-              {/* Footer */}
-              <div className={`flex items-center justify-end gap-2.5 p-4 border-t ${isDarkMode ? "border-zinc-800" : "border-zinc-200"}`}>
-                <button
-                  type="button"
-                  onClick={() => setIsChangePasswordOpen(false)}
-                  className={`rounded-lg border px-4 py-2 text-xs font-bold transition-all ${
-                    isDarkMode
-                      ? "border-zinc-700 text-zinc-400 hover:bg-zinc-800"
-                      : "border-zinc-300 text-zinc-500 hover:bg-zinc-100"
-                  }`}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isUpdatingPassword}
-                  className="rounded-lg bg-gradient-to-r from-purple-600 to-cyan-500 px-5 py-2 text-xs font-bold text-white shadow-md hover:shadow-lg transition-all active:scale-95 disabled:opacity-40"
-                >
-                  {isUpdatingPassword ? "Updating..." : "Update Password"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+            {/* ----------------------------------------------------
+            TAB 11: SETTINGS
+            ---------------------------------------------------- */}
+            {activeTab === "Settings" && (
+              <div className="space-y-6 max-w-2xl">
+                <div className="glass-card p-6 space-y-6">
+                  <h3 className="text-sm font-bold tracking-wide text-zinc-500 uppercase">Profile Settings</h3>
 
-      {/* Clear All Timetable Confirmation Modal */}
-      {isClearAllModalOpen && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            onClick={() => setIsClearAllModalOpen(false)}
-          />
+                  <form onSubmit={handleSaveProfile} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label htmlFor="input-full-name-23" className="text-[10px] uppercase font-bold text-zinc-400">Full Name</label>
+                        <input id="input-full-name-23"
+                          type="text"
+                          value={editFullName}
+                          onChange={e => setEditFullName(e.target.value)}
+                          placeholder="Your Full Name"
+                          className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label htmlFor="input-college-institution-24" className="text-[10px] uppercase font-bold text-zinc-400">College / Institution</label>
+                        <input id="input-college-institution-24"
+                          type="text"
+                          value={editCollege}
+                          onChange={e => setEditCollege(e.target.value)}
+                          placeholder="Your College / Institution"
+                          className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label htmlFor="input-course-name-25" className="text-[10px] uppercase font-bold text-zinc-400">Course Name</label>
+                        <input id="input-course-name-25"
+                          type="text"
+                          value={editCourse}
+                          onChange={e => setEditCourse(e.target.value)}
+                          placeholder="e.g. B.Tech Computer Science"
+                          className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] uppercase font-bold text-zinc-400">Email Address (Locked)</label>
+                        <div className="w-full px-4 py-3 bg-zinc-900/10 dark:bg-zinc-900/20 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs font-semibold text-zinc-500">
+                          {currentUser.email}
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <label htmlFor="input-academic-year-26" className="text-[10px] uppercase font-bold text-zinc-400">Academic Year</label>
+                        <select id="input-academic-year-26"
+                          value={editYear}
+                          onChange={e => setEditYear(e.target.value)}
+                          className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
+                        >
+                          <option>I Year</option>
+                          <option>II Year</option>
+                          <option>III Year</option>
+                          <option>IV Year</option>
+                        </select>
+                      </div>
+                    </div>
 
-          {/* Modal */}
-          <div
-            className={`relative w-full max-w-sm overflow-hidden rounded-2xl border shadow-2xl flex flex-col ${
-              isDarkMode
-                ? "bg-[#14121b] border-zinc-800 shadow-red-500/5 text-zinc-100"
-                : "bg-white border-zinc-200 shadow-red-500/10 text-zinc-900"
-            }`}
-          >
-            {/* Header */}
-            <div className={`flex items-center justify-between p-5 border-b ${isDarkMode ? "border-zinc-800" : "border-zinc-200"}`}>
-              <div className="flex items-center gap-3">
-                <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-red-650 to-orange-500 flex items-center justify-center">
-                  <span className="material-symbols-outlined text-white">warning</span>
+                    <div className="flex justify-end pt-2">
+                      <button
+                        type="submit"
+                        disabled={isSavingProfile}
+                        className="rounded-lg bg-[#7C3AED] hover:bg-[#6D28D9] px-4 py-2.5 text-xs font-bold text-white transition-all shadow-md active:scale-95 disabled:opacity-50"
+                      >
+                        {isSavingProfile ? "Saving changes..." : "Save Profile Settings"}
+                      </button>
+                    </div>
+                  </form>
                 </div>
-                <div>
-                  <h2 className="text-sm font-bold">Clear Timetable?</h2>
-                  <p className={`text-[10px] ${isDarkMode ? "text-zinc-500" : "text-zinc-400"}`}>
-                    This action cannot be undone
+
+                <div className="glass-card p-6 space-y-4">
+                  <h3 className="text-sm font-bold tracking-wide text-zinc-500 uppercase">Preferences</h3>
+
+                  <div className="flex items-center justify-between py-2">
+                    <div className="flex flex-col">
+                      <span className="text-xs font-bold">Theme Mode</span>
+                      <span className="text-[10px] text-zinc-500 mt-0.5">Toggle between dark-first and light mode.</span>
+                    </div>
+                    <button
+                      onClick={toggleTheme}
+                      className={`px-4 py-2 text-xs font-bold rounded-lg border transition-all ${isDarkMode ? "border-zinc-800 bg-zinc-900 text-[#06B6D4]" : "border-zinc-200 bg-zinc-100 text-zinc-600"}`}
+                    >
+                      {isDarkMode ? "Dark Mode" : "Light Mode"}
+                    </button>
+                  </div>
+
+
+                </div>
+                {authProvider !== "google" && (
+                  <div className="glass-card p-6 space-y-4">
+                    <h3 className="text-sm font-bold tracking-wide text-zinc-500 uppercase">Change Password</h3>
+                    <div className="flex items-center justify-between py-2">
+                      <div className="flex flex-col">
+                        <span className="text-xs font-bold">Update Account Security</span>
+                        <span className="text-[10px] text-zinc-500 mt-0.5">Modify your password securely using Supabase Auth.</span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setChangeCurrentPassword("");
+                          setChangeNewPassword("");
+                          setChangeConfirmNewPassword("");
+                          setPasswordUpdateError(null);
+                          setIsChangePasswordOpen(true);
+                        }}
+                        className="px-4 py-2 text-xs font-bold bg-[#7c5cff] hover:bg-[#6D28D9] text-white rounded-lg transition-all"
+                      >
+                        Change Password
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ----------------------------------------------------
+            TAB 12: SUPPORT
+            ---------------------------------------------------- */}
+            {activeTab === "Support" && (
+              <div className="space-y-6 max-w-2xl">
+                <div className="glass-card p-6 space-y-4">
+                  <h3 className="text-sm font-bold tracking-wide text-zinc-500 uppercase">Need Assistance?</h3>
+                  <p className="text-xs text-zinc-400 leading-relaxed">
+                    Welcome to the Acadsphere Support channel. If you have any technical questions, encounter bugs, or need help with course tracking or GPA predictors, please choose one of the options below.
                   </p>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
+                    <div className="p-4 border border-zinc-200 dark:border-zinc-800 rounded-xl bg-zinc-900/10 space-y-2">
+                      <span className="text-xs font-bold block">Submit a Bug Report</span>
+                      <p className="text-[10px] text-zinc-500">File a bug directly to developers using our feedback module.</p>
+                      <button
+                        onClick={() => setActiveTab("Feedback")}
+                        className="text-[10px] font-bold text-[#7c5cff] hover:underline flex items-center gap-1 mt-1"
+                      >
+                        Go to Feedback <ChevronRight className="h-3 w-3 inline" />
+                      </button>
+                    </div>
+
+                    <div className="p-4 border border-zinc-200 dark:border-zinc-800 rounded-xl bg-zinc-900/10 space-y-2">
+                      <span className="text-xs font-bold block">Documentation & FAQ</span>
+                      <p className="text-[10px] text-zinc-500">Learn how skip margins are calculated and CGPA weights are handled.</p>
+                      <p className="text-[10px] font-medium text-zinc-500">Documentation is not available yet.</p>
+                    </div>
+                  </div>
+                </div>
+
+
+              </div>
+            )}
+
+            {/* Change Password Modal */}
+            {isChangePasswordOpen && (
+              <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+                {/* Backdrop */}
+                <div
+                  className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                  onClick={() => setIsChangePasswordOpen(false)}
+                />
+
+                {/* Modal */}
+                <div
+                  className={`relative w-full max-w-md overflow-hidden rounded-2xl border shadow-2xl flex flex-col ${isDarkMode
+                      ? "bg-[#14121b] border-zinc-800 shadow-purple-500/5 text-zinc-100"
+                      : "bg-white border-zinc-200 shadow-purple-500/10 text-zinc-900"
+                    }`}
+                >
+                  {/* Header */}
+                  <div className={`flex items-center justify-between p-5 border-b ${isDarkMode ? "border-zinc-800" : "border-zinc-200"}`}>
+                    <div className="flex items-center gap-3">
+                      <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-purple-600 to-cyan-500 flex items-center justify-center">
+                        <span className="material-symbols-outlined text-white">lock</span>
+                      </div>
+                      <div>
+                        <h2 className="text-sm font-bold">Change Password</h2>
+                        <p className={`text-[10px] ${isDarkMode ? "text-zinc-500" : "text-zinc-400"}`}>
+                          Update your account security settings
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setIsChangePasswordOpen(false)}
+                      className={`h-8 w-8 rounded-lg flex items-center justify-center transition-all ${isDarkMode ? "hover:bg-zinc-800 text-zinc-400" : "hover:bg-zinc-100 text-zinc-500"
+                        }`}
+                    >
+                      <span className="material-symbols-outlined">close</span>
+                    </button>
+                  </div>
+
+                  {/* Form */}
+                  <form onSubmit={handlePasswordChange}>
+                    {/* Body */}
+                    <div className="p-5 space-y-4">
+                      {passwordUpdateError && (
+                        <div className={`flex items-start gap-2.5 rounded-lg border p-3 text-xs ${isDarkMode ? "border-red-500/20 bg-red-500/5 text-red-400" : "border-red-200 bg-red-50 text-red-600"
+                          }`}>
+                          <span className="material-symbols-outlined text-red-500 select-none">error</span>
+                          <span>{passwordUpdateError}</span>
+                        </div>
+                      )}
+
+                      <div className="space-y-1">
+                        <label htmlFor="input-current-password-27" className="text-[10px] uppercase font-bold text-zinc-400">Current Password</label>
+                        <input id="input-current-password-27"
+                          type="password"
+                          value={changeCurrentPassword}
+                          onChange={e => setChangeCurrentPassword(e.target.value)}
+                          placeholder="Enter current password"
+                          className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label htmlFor="input-new-password-28" className="text-[10px] uppercase font-bold text-zinc-400">New Password</label>
+                        <input id="input-new-password-28"
+                          type="password"
+                          value={changeNewPassword}
+                          onChange={e => setChangeNewPassword(e.target.value)}
+                          placeholder="At least 6 characters"
+                          className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label htmlFor="input-confirm-new-password-29" className="text-[10px] uppercase font-bold text-zinc-400">Confirm New Password</label>
+                        <input id="input-confirm-new-password-29"
+                          type="password"
+                          value={changeConfirmNewPassword}
+                          onChange={e => setChangeConfirmNewPassword(e.target.value)}
+                          placeholder="Re-enter new password"
+                          className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Footer */}
+                    <div className={`flex items-center justify-end gap-2.5 p-4 border-t ${isDarkMode ? "border-zinc-800" : "border-zinc-200"}`}>
+                      <button
+                        type="button"
+                        onClick={() => setIsChangePasswordOpen(false)}
+                        className={`rounded-lg border px-4 py-2 text-xs font-bold transition-all ${isDarkMode
+                            ? "border-zinc-700 text-zinc-400 hover:bg-zinc-800"
+                            : "border-zinc-300 text-zinc-500 hover:bg-zinc-100"
+                          }`}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={isUpdatingPassword}
+                        className="rounded-lg bg-gradient-to-r from-purple-600 to-cyan-500 px-5 py-2 text-xs font-bold text-white shadow-md hover:shadow-lg transition-all active:scale-95 disabled:opacity-40"
+                      >
+                        {isUpdatingPassword ? "Updating..." : "Update Password"}
+                      </button>
+                    </div>
+                  </form>
                 </div>
               </div>
-              <button
-                onClick={() => setIsClearAllModalOpen(false)}
-                className={`h-8 w-8 rounded-lg flex items-center justify-center transition-all ${
-                  isDarkMode ? "hover:bg-zinc-800 text-zinc-400" : "hover:bg-zinc-100 text-zinc-500"
-                }`}
-              >
-                <span className="material-symbols-outlined">close</span>
-              </button>
-            </div>
+            )}
 
-            {/* Body */}
-            <div className="p-5 text-xs text-zinc-400 leading-relaxed">
-              Are you sure you want to clear your entire weekly lecture timetable? This will permanently delete all your schedule blocks from the database.
-            </div>
+            {/* Clear All Timetable Confirmation Modal */}
+            {isClearAllModalOpen && (
+              <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+                {/* Backdrop */}
+                <div
+                  className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                  onClick={() => setIsClearAllModalOpen(false)}
+                />
 
-            {/* Footer */}
-            <div className={`flex items-center justify-end gap-2.5 p-4 border-t ${isDarkMode ? "border-zinc-800" : "border-zinc-200"}`}>
-              <button
-                type="button"
-                onClick={() => setIsClearAllModalOpen(false)}
-                className={`rounded-lg border px-4 py-2 text-xs font-bold transition-all ${
-                  isDarkMode
-                    ? "border-zinc-700 text-zinc-400 hover:bg-zinc-800"
-                    : "border-zinc-300 text-zinc-500 hover:bg-zinc-100"
-                }`}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleClearAllTimetable}
-                disabled={isClearingTimetable}
-                className="rounded-lg bg-red-600 hover:bg-red-700 px-5 py-2 text-xs font-bold text-white shadow-md transition-all active:scale-95 disabled:opacity-40"
-              >
-                {isClearingTimetable ? "Clearing..." : "Clear Timetable"}
-              </button>
-            </div>
-          </div>
+                {/* Modal */}
+                <div
+                  className={`relative w-full max-w-sm overflow-hidden rounded-2xl border shadow-2xl flex flex-col ${isDarkMode
+                      ? "bg-[#14121b] border-zinc-800 shadow-red-500/5 text-zinc-100"
+                      : "bg-white border-zinc-200 shadow-red-500/10 text-zinc-900"
+                    }`}
+                >
+                  {/* Header */}
+                  <div className={`flex items-center justify-between p-5 border-b ${isDarkMode ? "border-zinc-800" : "border-zinc-200"}`}>
+                    <div className="flex items-center gap-3">
+                      <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-red-650 to-orange-500 flex items-center justify-center">
+                        <span className="material-symbols-outlined text-white">warning</span>
+                      </div>
+                      <div>
+                        <h2 className="text-sm font-bold">Clear Timetable?</h2>
+                        <p className={`text-[10px] ${isDarkMode ? "text-zinc-500" : "text-zinc-400"}`}>
+                          This action cannot be undone
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setIsClearAllModalOpen(false)}
+                      className={`h-8 w-8 rounded-lg flex items-center justify-center transition-all ${isDarkMode ? "hover:bg-zinc-800 text-zinc-400" : "hover:bg-zinc-100 text-zinc-500"
+                        }`}
+                    >
+                      <span className="material-symbols-outlined">close</span>
+                    </button>
+                  </div>
+
+                  {/* Body */}
+                  <div className="p-5 text-xs text-zinc-400 leading-relaxed">
+                    Are you sure you want to clear your entire weekly lecture timetable? This will permanently delete all your schedule blocks from the database.
+                  </div>
+
+                  {/* Footer */}
+                  <div className={`flex items-center justify-end gap-2.5 p-4 border-t ${isDarkMode ? "border-zinc-800" : "border-zinc-200"}`}>
+                    <button
+                      type="button"
+                      onClick={() => setIsClearAllModalOpen(false)}
+                      className={`rounded-lg border px-4 py-2 text-xs font-bold transition-all ${isDarkMode
+                          ? "border-zinc-700 text-zinc-400 hover:bg-zinc-800"
+                          : "border-zinc-300 text-zinc-500 hover:bg-zinc-100"
+                        }`}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleClearAllTimetable}
+                      disabled={isClearingTimetable}
+                      className="rounded-lg bg-red-600 hover:bg-red-700 px-5 py-2 text-xs font-bold text-white shadow-md transition-all active:scale-95 disabled:opacity-40"
+                    >
+                      {isClearingTimetable ? "Clearing..." : "Clear Timetable"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+          </main>
         </div>
-      )}
-
-      </main>
+      </div>
     </div>
-  </div>
-</div>
 
   );
 }

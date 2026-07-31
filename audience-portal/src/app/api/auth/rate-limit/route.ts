@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Extract client IP address
-    const ip = request.headers.get("x-forwarded-for") || (request as any).ip || "127.0.0.1";
+    const ip = request.headers.get("x-forwarded-for") || (request as { ip?: string }).ip || "127.0.0.1";
     const key = `${ip}:${type}`;
 
     const now = Date.now();
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ success: true });
-  } catch (err: any) {
+  } catch (_err: unknown) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

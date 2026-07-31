@@ -7,7 +7,7 @@ interface ProgressRingProps {
   momentum: number;
 }
 
-export default function ProgressRing({ score, status, xpGained, momentum }: ProgressRingProps) {
+export default function ProgressRing({ score,  xpGained, momentum }: ProgressRingProps) {
   const radius = 82;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (score / 100) * circumference;
@@ -33,7 +33,7 @@ export default function ProgressRing({ score, status, xpGained, momentum }: Prog
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <span className="text-3xl font-extrabold tracking-tighter text-[var(--foreground)]">{score}%</span>
-          <span className="text-[8px] font-bold text-[var(--muted)] uppercase tracking-widest mt-1">Today's Progress</span>
+          <span className="text-[8px] font-bold text-[var(--muted)] uppercase tracking-widest mt-1">Today&apos;s Progress</span>
         </div>
       </div>
       
