@@ -13,6 +13,7 @@ export default function Footer() {
         </div>
         <div className="flex items-center gap-6 z-50">
           <Link className="font-label-md text-xs font-semibold text-zinc-500 dark:text-zinc-450 hover:text-[#7C3AED] dark:hover:text-[#9c82ff] transition-colors" href="/privacy">Privacy Policy</Link>
+          <Link className="font-label-md text-xs font-semibold text-zinc-500 dark:text-zinc-450 hover:text-[#7C3AED] dark:hover:text-[#9c82ff] transition-colors" href="/terms">Terms of Service</Link>
           <a className="font-label-md text-xs font-semibold text-zinc-500 dark:text-zinc-450 hover:text-[#06B6D4] dark:hover:text-[#22d3ee] transition-colors relative z-50 cursor-pointer" href={adminPortalUrl} target="_blank" rel="noopener noreferrer">Admin Portal</a>
         </div>
       </div>

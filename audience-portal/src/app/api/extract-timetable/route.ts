@@ -47,14 +47,14 @@ interface ExtractedEntry {
 // Helper to normalize day string to valid full weekday name
 function normalizeDay(dayRaw: string): string | null {
   if (!dayRaw || typeof dayRaw !== "string") return null;
-  const d = dayRaw.trim().toLowerCase().replace(/[^a-z]/g, "");
+  const d = dayRaw.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
 
-  if (d.startsWith("mon")) return "Monday";
-  if (d.startsWith("tue")) return "Tuesday";
-  if (d.startsWith("wed")) return "Wednesday";
-  if (d.startsWith("thu")) return "Thursday";
-  if (d.startsWith("fri")) return "Friday";
-  if (d.startsWith("sat")) return "Saturday";
+  if (d.startsWith("mon") || d.includes("do1")) return "Monday";
+  if (d.startsWith("tue") || d.includes("do2")) return "Tuesday";
+  if (d.startsWith("wed") || d.includes("do3")) return "Wednesday";
+  if (d.startsWith("thu") || d.includes("do4")) return "Thursday";
+  if (d.startsWith("fri") || d.includes("do5")) return "Friday";
+  if (d.startsWith("sat") || d.includes("do6")) return "Saturday";
   if (d.startsWith("sun")) return "Sunday";
 
   return null;
@@ -539,6 +539,21 @@ async function chatCompletionWithFallback(hf: HfInference, userMessageContent: s
   throw lastError || new Error("All AI text models timed out or failed to respond. Please try again.");
 }
 
+interface ExtractRateLimitRecord {
+  attempts: number;
+  resetTime: number;
+}
+
+const globalForExtractRateLimit = global as unknown as {
+  extractRateLimitStore?: Record<string, ExtractRateLimitRecord>;
+};
+
+if (!globalForExtractRateLimit.extractRateLimitStore) {
+  globalForExtractRateLimit.extractRateLimitStore = {};
+}
+
+const extractStore = globalForExtractRateLimit.extractRateLimitStore;
+
 export async function POST(request: NextRequest) {
   try {
     // 1. Authenticate user session independently on the server side
@@ -558,6 +573,33 @@ export async function POST(request: NextRequest) {
         { error: "Access Denied: Invalid or expired session." },
         { status: 401 }
       );
+    }
+
+    // 1.5 Rate Limiting (5 extractions per hour)
+    const now = Date.now();
+    const limit = 5;
+    const windowMs = 60 * 60 * 1000;
+    const record = extractStore[user.id];
+    
+    if (record) {
+      if (now < record.resetTime) {
+        if (record.attempts >= limit) {
+          const waitMin = Math.ceil((record.resetTime - now) / 60000);
+          return NextResponse.json(
+            { error: `Too many extractions. Please try again after ${waitMin} minutes.` },
+            { status: 429 }
+          );
+        }
+        record.attempts += 1;
+      } else {
+        record.attempts = 1;
+        record.resetTime = now + windowMs;
+      }
+    } else {
+      extractStore[user.id] = {
+        attempts: 1,
+        resetTime: now + windowMs
+      };
     }
 
     // 2. Validate API key configuration

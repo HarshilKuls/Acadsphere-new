@@ -15,6 +15,7 @@ export default function Navbar({ toggleTheme }: { toggleTheme: () => void }) {
         <nav className="hidden md:flex items-center gap-8">
           <Link className="font-label-md text-label-md text-[#7C3AED] dark:text-[#9c82ff] font-bold transition-colors duration-200" href="/">Home</Link>
           <Link className="font-label-md text-label-md text-zinc-500 dark:text-zinc-400 hover:text-[#7C3AED] dark:hover:text-[#9c82ff] transition-colors duration-200" href="/privacy">Privacy</Link>
+          <Link className="font-label-md text-label-md text-zinc-500 dark:text-zinc-400 hover:text-[#7C3AED] dark:hover:text-[#9c82ff] transition-colors duration-200" href="/terms">Terms</Link>
         </nav>
         <div className="flex items-center gap-4">
           <button onClick={toggleTheme} className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-850 transition-colors text-zinc-500 dark:text-zinc-400">

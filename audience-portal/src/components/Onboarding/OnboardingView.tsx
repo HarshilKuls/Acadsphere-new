@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Building, GraduationCap, Sparkles, CheckCircle2, Loader2, Sun, Moon } from "lucide-react";
 import { StudentUser } from "@/lib/db";
 
@@ -25,6 +26,7 @@ export default function OnboardingView({
   const [college, setCollege] = useState(currentUser.college || "");
   const [course, setCourse] = useState(currentUser.course || "");
   const [year, setYear] = useState(currentUser.year || "I Year");
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSkipping, setIsSkipping] = useState(false);
@@ -35,6 +37,11 @@ export default function OnboardingView({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    if (!agreedToTerms) {
+      setError("Please agree to the Terms of Service and Privacy Policy.");
+      return;
+    }
 
     const trimmedCollege = college.trim();
     const trimmedCourse = course.trim();
@@ -64,6 +71,12 @@ export default function OnboardingView({
 
   const handleSkip = async () => {
     setError("");
+
+    if (!agreedToTerms) {
+      setError("Please agree to the Terms of Service and Privacy Policy before skipping.");
+      return;
+    }
+
     setIsSkipping(true);
     const success = await onSkip();
     setIsSkipping(false);
@@ -204,6 +217,19 @@ export default function OnboardingView({
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <div className="flex items-start gap-2.5 pt-2">
+                <input
+                  type="checkbox"
+                  id="agree-terms"
+                  checked={agreedToTerms}
+                  onChange={(e) => setAgreedToTerms(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-zinc-300 text-[#7C3AED] focus:ring-[#7C3AED] dark:border-zinc-700 dark:bg-[#09090f] dark:focus:ring-offset-zinc-900"
+                />
+                <label htmlFor="agree-terms" className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                  I agree to AcadSphere's <Link href="/terms" target="_blank" className="text-[#7C3AED] dark:text-[#9c82ff] hover:underline font-semibold">Terms of Service</Link> and <Link href="/privacy" target="_blank" className="text-[#7C3AED] dark:text-[#9c82ff] hover:underline font-semibold">Privacy Policy</Link>.
+                </label>
               </div>
 
               <button

@@ -3144,7 +3144,13 @@ export default function Home() {
                         </div>
 
                         <button
-                          onClick={() => triggerToast(`Downloading: ${item.title}...`)}
+                          onClick={() => {
+                            if (item.downloadUrl) {
+                              window.open(item.downloadUrl, '_blank');
+                            } else {
+                              triggerToast(`Downloading: ${item.title}...`);
+                            }
+                          }}
                           className="mt-5 w-full flex items-center justify-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-900/40 hover:bg-zinc-850 hover:border-zinc-700 py-2.5 text-xs font-bold text-white transition-all active:scale-95"
                         >
                           <Download className="h-3.5 w-3.5 text-[#06B6D4]" />

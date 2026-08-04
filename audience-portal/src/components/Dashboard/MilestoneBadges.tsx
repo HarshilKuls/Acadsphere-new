@@ -97,7 +97,12 @@ function BadgeCard({ badge }: { badge: MilestoneBadge }) {
 export default function MilestoneBadges({ badges }: { badges: MilestoneBadge[] }) {
   const earned = badges.filter((badge) => badge.earned).length;
   const [showAll, setShowAll] = useState(false);
-  const displayedBadges = showAll ? badges : badges.slice(0, 6);
+  const sortedBadges = [...badges].sort((a, b) => {
+    if (a.earned === b.earned) return 0;
+    return a.earned ? -1 : 1;
+  });
+
+  const displayedBadges = showAll ? sortedBadges : sortedBadges.slice(0, 6);
 
   return (
     <section className="mt-4 rounded-xl border border-[var(--outline-dim)] bg-[var(--surface-low)] p-4 sm:p-5" aria-labelledby="milestone-badges-heading">

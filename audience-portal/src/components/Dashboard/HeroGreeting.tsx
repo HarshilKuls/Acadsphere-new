@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { StudentUser, TimetableEntry } from "@/lib/db";
 
 interface HeroGreetingProps {
@@ -11,6 +11,19 @@ export default function HeroGreeting({ currentUser, todaysClasses, healthScore }
   const firstName = currentUser.fullName ? currentUser.fullName.split(" ")[0] : "Student";
   const collegeLabel = currentUser.college ? currentUser.college : "College not set";
   const yearLabel = currentUser.year ? currentUser.year : "Year not set";
+
+  const [greeting, setGreeting] = useState("Good morning");
+
+  useEffect(() => {
+    const currentHour = new Date().getHours();
+    if (currentHour < 12) {
+      setGreeting("Good morning");
+    } else if (currentHour < 17) {
+      setGreeting("Good afternoon");
+    } else {
+      setGreeting("Good evening");
+    }
+  }, []);
 
   return (
     <div className="lg:col-span-8 glass-card relative overflow-hidden min-h-0 sm:min-h-[168px] flex items-end p-4 sm:p-6">
@@ -26,7 +39,7 @@ export default function HeroGreeting({ currentUser, todaysClasses, healthScore }
           </div>
           
           <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight mb-1 text-[var(--foreground)]">
-            Good morning, {firstName}.
+            {greeting}, {firstName}.
           </h2>
           
           <p className="text-xs text-[var(--muted)] max-w-lg leading-relaxed">
