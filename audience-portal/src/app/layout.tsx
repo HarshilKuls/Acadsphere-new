@@ -1,15 +1,11 @@
 import type { Metadata } from "next";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
+import { AcadsphereProvider } from "@/context/AcadsphereContext";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Acadsphere | Your Academic Command Center",
   description: "Acadsphere is a highly elegant, minimalist, and futuristic academic operating system for students to track schedules, attendance margins, CGPA courses, and grade projections.",
-  icons: {
-    icon: "/icon.png",
-    shortcut: "/icon.png",
-    apple: "/icon.png",
-  },
 };
 
 export default function RootLayout({
@@ -28,8 +24,12 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col">
         <GoogleAnalytics />
-        {children}
+        <AcadsphereProvider>
+          {children}
+        </AcadsphereProvider>
       </body>
     </html>
   );
 }
+
+
