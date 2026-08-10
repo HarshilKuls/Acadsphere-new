@@ -9,7 +9,6 @@ export default function Header() {
     isSidebarOpen,
     setIsSidebarOpen,
     setIsSidebarCollapsed,
-    setLibrarySearch,
     activeTab,
     setActiveTab,
     toggleTheme,
@@ -46,7 +45,6 @@ export default function Header() {
           value={headerSearch}
           onChange={(e) => {
             setHeaderSearch(e.target.value);
-            setLibrarySearch(e.target.value);
             if (activeTab !== "E-Library" && e.target.value.length > 2) {
               setActiveTab("E-Library");
             }
