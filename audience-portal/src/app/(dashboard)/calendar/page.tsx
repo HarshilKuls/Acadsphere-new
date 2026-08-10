@@ -329,7 +329,7 @@ export default function CalendarPage() {
                         {calendarEvents.filter(e => e.userId !== 'admin').length > 0 ? calendarEvents.filter(e => e.userId !== 'admin').map(ev => (
                           <div key={ev.id} className="flex items-center justify-between p-2.5 border border-zinc-800 rounded-lg bg-zinc-900/10">
                             <div>
-                              <span className="text-xs font-bold text-white block truncate max-w-[120px]">{ev.title}</span>
+                              <span className={`text-xs font-bold block truncate max-w-[120px] ${isDarkMode ? "text-white" : "text-zinc-900"}`}>{ev.title}</span>
                               <span className="text-[9px] text-zinc-500 block font-semibold">{ev.date} &bull; {ev.type}</span>
                             </div>
                             <div className="flex items-center gap-1">

@@ -272,7 +272,7 @@ export default function AttendancePage() {
                         <div>
                           <div className="flex items-start justify-between mb-3">
                             <div>
-                              <span className="text-sm font-bold text-white block">{item.subject}</span>
+                              <span className={`text-sm font-bold block ${isDarkMode ? "text-white" : "text-zinc-900"}`}>{item.subject}</span>
                               <span className="text-[10px] text-zinc-500 font-semibold">Tally: {item.attended} / {item.total} lectures</span>
                             </div>
                             <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${isSafe ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : "bg-red-500/10 text-red-500 border-red-500/20"}`}>

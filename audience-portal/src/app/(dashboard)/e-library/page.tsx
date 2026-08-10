@@ -195,7 +195,7 @@ export default function ELibraryPage() {
                       <button
                         key={cat}
                         onClick={() => setLibraryCategoryFilter(cat)}
-                        className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-all ${libraryCategoryFilter === cat ? "bg-[#7C3AED] text-white border-transparent" : "border-zinc-800 hover:bg-zinc-800 text-zinc-400"}`}
+                        className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-all ${libraryCategoryFilter === cat ? "bg-[#7C3AED] text-white border-transparent" : (isDarkMode ? "border-zinc-800 hover:bg-zinc-800 text-zinc-400" : "border-zinc-300 hover:bg-zinc-200 text-zinc-600")}`}
                       >
                         {cat}
                       </button>
@@ -217,8 +217,8 @@ export default function ELibraryPage() {
                             <span className="text-[10px] text-zinc-500 font-bold">{item.size}</span>
                           </div>
 
-                          <h4 className="text-sm font-extrabold text-white leading-snug tracking-tight mb-2">{item.title}</h4>
-                          <p className="text-[11px] text-zinc-400 font-semibold">{item.subject} &bull; {item.semester}</p>
+                          <h4 className={`text-sm font-extrabold leading-snug tracking-tight mb-2 ${isDarkMode ? "text-white" : "text-zinc-900"}`}>{item.title}</h4>
+                          <p className={`text-[11px] font-semibold ${isDarkMode ? "text-zinc-400" : "text-zinc-600"}`}>{item.subject} &bull; {item.semester}</p>
                         </div>
 
                         <button
@@ -229,7 +229,7 @@ export default function ELibraryPage() {
                               triggerToast(`Downloading: ${item.title}...`);
                             }
                           }}
-                          className="mt-5 w-full flex items-center justify-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-900/40 hover:bg-zinc-850 hover:border-zinc-700 py-2.5 text-xs font-bold text-white transition-all active:scale-95"
+                          className={`mt-5 w-full flex items-center justify-center gap-1.5 rounded-lg border py-2.5 text-xs font-bold transition-all active:scale-95 ${isDarkMode ? "border-zinc-800 bg-zinc-900/40 hover:bg-zinc-850 hover:border-zinc-700 text-white" : "border-zinc-300 bg-zinc-100 hover:bg-zinc-200 hover:border-zinc-400 text-zinc-800"}`}
                         >
                           <Download className="h-3.5 w-3.5 text-[#06B6D4]" />
                           Download Resource

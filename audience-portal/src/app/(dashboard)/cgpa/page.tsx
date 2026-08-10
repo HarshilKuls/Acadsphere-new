@@ -203,7 +203,7 @@ export default function CGPAPage() {
                         <button
                           key={sem}
                           onClick={() => setSelectedSemester(sem)}
-                          className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-all ${selectedSemester === sem ? "bg-[#7C3AED] text-white border-transparent" : "border-zinc-800 hover:bg-zinc-800 text-zinc-400"}`}
+                          className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-all ${selectedSemester === sem ? "bg-[#7C3AED] text-white border-transparent" : (isDarkMode ? "border-zinc-800 hover:bg-zinc-800 text-zinc-400" : "border-zinc-300 hover:bg-zinc-200 text-zinc-600")}`}
                         >
                           Sem {sem}
                         </button>
@@ -302,7 +302,7 @@ export default function CGPAPage() {
                         <tbody>
                           {cgpaSubjects.filter(s => s.semester === selectedSemester).map(item => (
                             <tr key={item.id} className="border-b border-zinc-800/50 hover:bg-zinc-800/10">
-                              <td className="py-3 font-semibold text-white">{item.subjectName}</td>
+                              <td className={`py-3 font-semibold ${isDarkMode ? "text-white" : "text-zinc-900"}`}>{item.subjectName}</td>
                               <td className="py-3 text-zinc-400">{item.credits}</td>
                               <td className="py-3 font-extrabold text-[#7C3AED]">{item.grade}</td>
                               <td className="py-3 text-zinc-400">{gradePoints[item.grade]}</td>

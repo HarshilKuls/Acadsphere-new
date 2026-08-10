@@ -188,7 +188,7 @@ export default function EventsPage() {
                         <button
                           key={field}
                           onClick={() => setRadarFieldFilter(field)}
-                          className={`px-3.5 py-1.5 text-xs font-bold rounded-lg border transition-all ${radarFieldFilter === field ? "bg-[#7C3AED] text-white border-transparent shadow-md shadow-[#7C3AED]/20" : "border-zinc-800 bg-zinc-900/30 hover:bg-zinc-800 text-zinc-400"}`}
+                          className={`px-3.5 py-1.5 text-xs font-bold rounded-lg border transition-all ${radarFieldFilter === field ? "bg-[#7C3AED] text-white border-transparent shadow-md shadow-[#7C3AED]/20" : (isDarkMode ? "border-zinc-800 bg-zinc-900/30 hover:bg-zinc-800 text-zinc-400" : "border-zinc-300 bg-zinc-50 hover:bg-zinc-200 text-zinc-600")}`}
                         >
                           {field}
                         </button>
@@ -238,7 +238,7 @@ export default function EventsPage() {
 
                         <div className="p-5 flex-1 flex flex-col justify-between">
                           <div>
-                            <h4 className="text-base font-extrabold text-white leading-snug">{ev.title}</h4>
+                            <h4 className={`text-base font-extrabold leading-snug ${isDarkMode ? "text-white" : "text-zinc-900"}`}>{ev.title}</h4>
                             <span className="text-[11px] text-[#06B6D4] font-bold block mt-1.5 mb-3">{ev.organizer}</span>
                             <p className="text-xs text-zinc-500 leading-relaxed mb-4">{ev.description}</p>
                           </div>

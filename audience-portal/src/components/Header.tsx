@@ -1,9 +1,10 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useAcadsphere } from "@/context/AcadsphereContext";
 
 export default function Header() {
+  const [headerSearch, setHeaderSearch] = useState("");
   const {
     isSidebarOpen,
     setIsSidebarOpen,
@@ -43,8 +44,9 @@ export default function Header() {
           type="search"
           className="search-input"
           placeholder="Search modules, events, files..."
-          value={librarySearch}
+          value={headerSearch}
           onChange={(e) => {
+            setHeaderSearch(e.target.value);
             setLibrarySearch(e.target.value);
             if (activeTab !== "E-Library" && e.target.value.length > 2) {
               setActiveTab("E-Library");

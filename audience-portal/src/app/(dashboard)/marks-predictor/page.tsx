@@ -281,7 +281,7 @@ export default function MarksPredictorPage() {
                         <div>
                           <div className="flex items-start justify-between mb-4">
                             <div>
-                              <span className="text-base font-extrabold text-white block">{item.subject}</span>
+                              <span className={`text-base font-extrabold block ${isDarkMode ? "text-white" : "text-zinc-900"}`}>{item.subject}</span>
                               <span className="text-[10px] text-zinc-500 font-semibold">Current Internals: {item.internalScore} / {item.internalTotal} ({requirement.internalContrib.toFixed(1)} / 60.0 pts)</span>
                             </div>
 
@@ -295,7 +295,7 @@ export default function MarksPredictorPage() {
                           <div className="space-y-3 p-3 bg-zinc-800/30 rounded-xl border border-zinc-800">
                             <div className="flex justify-between text-xs">
                               <span className="text-zinc-400">Needed External Score:</span>
-                              <span className={`font-bold ${requirement.feasible ? "text-white" : "text-rose-500"}`}>
+                              <span className={`font-bold ${requirement.feasible ? (isDarkMode ? "text-white" : "text-zinc-900") : "text-rose-500"}`}>
                                 {requirement.alreadySecured ? "Already secured" : requirement.feasible ? `${requirement.rawExternalNeeded} / ${item.externalTotal}` : "Impossible"}
                               </span>
                             </div>

@@ -188,7 +188,7 @@ export default function InternshipPage() {
                         <button
                           key={field}
                           onClick={() => setRadarFieldFilter(field)}
-                          className={`px-3.5 py-1.5 text-xs font-bold rounded-lg border transition-all ${radarFieldFilter === field ? "bg-[#7C3AED] text-white border-transparent shadow-md shadow-[#7C3AED]/20" : "border-zinc-800 bg-zinc-900/30 hover:bg-zinc-800 text-zinc-400"}`}
+                          className={`px-3.5 py-1.5 text-xs font-bold rounded-lg border transition-all ${radarFieldFilter === field ? "bg-[#7C3AED] text-white border-transparent shadow-md shadow-[#7C3AED]/20" : (isDarkMode ? "border-zinc-800 bg-zinc-900/30 hover:bg-zinc-800 text-zinc-400" : "border-zinc-300 bg-zinc-50 hover:bg-zinc-200 text-zinc-600")}`}
                         >
                           {field}
                         </button>
@@ -205,11 +205,11 @@ export default function InternshipPage() {
                         <div>
                           <div className="flex items-start justify-between mb-4">
                             <div>
-                              <h4 className="text-base font-extrabold text-white">{item.role}</h4>
+                              <h4 className={`text-base font-extrabold ${isDarkMode ? "text-white" : "text-zinc-900"}`}>{item.role}</h4>
                               <span className="text-xs text-[#06B6D4] font-bold block mt-1">{item.company}</span>
                             </div>
 
-                            <div className="h-10 w-10 rounded-xl bg-zinc-800 flex items-center justify-center font-black text-white border border-zinc-700 shadow-inner">
+                            <div className={`h-10 w-10 rounded-xl flex items-center justify-center font-black shadow-inner border ${isDarkMode ? "bg-zinc-800 text-white border-zinc-700" : "bg-zinc-200 text-zinc-800 border-zinc-300"}`}>
                               {item.logo}
                             </div>
                           </div>
@@ -217,7 +217,7 @@ export default function InternshipPage() {
                           <div className="grid grid-cols-2 gap-3 mb-4 p-3 bg-zinc-800/20 rounded-xl border border-zinc-850">
                             <div>
                               <span className="block text-[9px] font-bold text-zinc-500 uppercase">Stipend Cap</span>
-                              <span className="text-xs font-extrabold text-white">{item.stipend}</span>
+                              <span className={`text-xs font-extrabold ${isDarkMode ? "text-white" : "text-zinc-900"}`}>{item.stipend}</span>
                             </div>
                             <div>
                               <span className="block text-[9px] font-bold text-zinc-500 uppercase">Duration</span>
