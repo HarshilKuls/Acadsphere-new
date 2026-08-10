@@ -214,7 +214,7 @@ export default function InternshipPage() {
                             </div>
                           </div>
 
-                          <div className="grid grid-cols-2 gap-3 mb-4 p-3 bg-zinc-800/20 rounded-xl border border-zinc-850">
+                          <div className={`grid grid-cols-2 gap-3 mb-4 p-3 rounded-xl border ${isDarkMode ? "bg-zinc-800/20 border-zinc-800" : "bg-zinc-100 border-zinc-300"}`}>
                             <div>
                               <span className="block text-[9px] font-bold text-zinc-500 uppercase">Stipend Cap</span>
                               <span className={`text-xs font-extrabold ${isDarkMode ? "text-white" : "text-zinc-900"}`}>{item.stipend}</span>
@@ -241,7 +241,7 @@ export default function InternshipPage() {
                       </div>
                     ))
                   ) : (
-                    <div className="col-span-full py-16 text-center border border-zinc-800/40 border-dashed rounded-2xl bg-zinc-900/20">
+                    <div className={`col-span-full py-16 text-center border border-dashed rounded-2xl ${isDarkMode ? "border-zinc-800/40 bg-zinc-900/20" : "border-zinc-300/40 bg-zinc-50"}`}>
                       <Briefcase className="h-8 w-8 text-zinc-600 mx-auto mb-3" />
                       <p className="text-sm text-zinc-400 font-bold">No internships found</p>
                       <p className="text-xs text-zinc-500 mt-1">Try adjusting your field focus.</p>

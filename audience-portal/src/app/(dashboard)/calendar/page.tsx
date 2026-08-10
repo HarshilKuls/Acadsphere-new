@@ -187,16 +187,16 @@ export default function CalendarPage() {
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => setCurrentCalendarMonth(new Date(currentCalendarMonth.getFullYear(), currentCalendarMonth.getMonth() - 1))}
-                          className="px-2.5 py-1.5 text-xs border border-zinc-800 hover:bg-zinc-800 rounded-lg text-zinc-400 font-bold"
+                          className={`px-2.5 py-1.5 text-xs rounded-lg font-bold ${isDarkMode ? "border border-zinc-800 hover:bg-zinc-800 text-zinc-400" : "border border-zinc-300 hover:bg-zinc-200 text-zinc-500"}`}
                         >
                           Prev
                         </button>
-                        <span className="text-xs font-bold text-white px-2">
+                        <span className={`text-xs font-bold px-2 ${isDarkMode ? "text-white" : "text-zinc-900"}`}>
                           {currentCalendarMonth.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
                         </span>
                         <button
                           onClick={() => setCurrentCalendarMonth(new Date(currentCalendarMonth.getFullYear(), currentCalendarMonth.getMonth() + 1))}
-                          className="px-2.5 py-1.5 text-xs border border-zinc-800 hover:bg-zinc-800 rounded-lg text-zinc-400 font-bold"
+                          className={`px-2.5 py-1.5 text-xs rounded-lg font-bold ${isDarkMode ? "border border-zinc-800 hover:bg-zinc-800 text-zinc-400" : "border border-zinc-300 hover:bg-zinc-200 text-zinc-500"}`}
                         >
                           Next
                         </button>
@@ -213,7 +213,7 @@ export default function CalendarPage() {
                     <div className="grid grid-cols-7 gap-1 sm:gap-2">
                       {/* Offsets */}
                       {Array.from({ length: startDayOffset }).map((_, i) => (
-                        <div key={`offset-${i}`} className="h-10 sm:h-16 border border-zinc-800/10 rounded-lg" />
+                        <div key={`offset-${i}`} className={`h-10 sm:h-16 border rounded-lg ${isDarkMode ? "border-zinc-800/10" : "border-zinc-300/10"}`} />
                       ))}
 
                       {/* Month days */}
@@ -228,7 +228,7 @@ export default function CalendarPage() {
                         return (
                           <div
                             key={dateStr}
-                            className={`min-h-[64px] border p-1 rounded-lg flex flex-col justify-between transition-all ${isToday ? "border-[#7C3AED] bg-[#7C3AED]/5" : "border-zinc-800 hover:border-zinc-700 bg-zinc-900/10"}`}
+                            className={`min-h-[64px] border p-1 rounded-lg flex flex-col justify-between transition-all ${isToday ? "border-[#7C3AED] bg-[#7C3AED]/5" : (isDarkMode ? "border-zinc-800 hover:border-zinc-700 bg-zinc-900/10" : "border-zinc-300 hover:border-zinc-400 bg-zinc-50")}`}
                           >
                             <span className={`text-[10px] font-bold block text-left ${isToday ? "text-[#7C3AED]" : "text-zinc-500"}`}>
                               {dayObj.getDate()}
@@ -327,7 +327,7 @@ export default function CalendarPage() {
 
                       <div className="space-y-2.5 overflow-y-auto max-h-48 pr-1">
                         {calendarEvents.filter(e => e.userId !== 'admin').length > 0 ? calendarEvents.filter(e => e.userId !== 'admin').map(ev => (
-                          <div key={ev.id} className="flex items-center justify-between p-2.5 border border-zinc-800 rounded-lg bg-zinc-900/10">
+                          <div key={ev.id} className={`flex items-center justify-between p-2.5 border rounded-lg ${isDarkMode ? "border-zinc-800 bg-zinc-900/10" : "border-zinc-300 bg-zinc-50"}`}>
                             <div>
                               <span className={`text-xs font-bold block truncate max-w-[120px] ${isDarkMode ? "text-white" : "text-zinc-900"}`}>{ev.title}</span>
                               <span className="text-[9px] text-zinc-500 block font-semibold">{ev.date} &bull; {ev.type}</span>

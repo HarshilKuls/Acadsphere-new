@@ -243,7 +243,7 @@ export default function AttendancePage() {
                         <button
                           type="button"
                           onClick={cancelAttendanceEdit}
-                          className="rounded-lg border border-zinc-800 px-4 py-2.5 text-xs font-bold text-zinc-400 hover:bg-zinc-800/60 transition-all"
+                          className={`rounded-lg border px-4 py-2.5 text-xs font-bold transition-all ${isDarkMode ? "border-zinc-800 text-zinc-400 hover:bg-zinc-800/60" : "border-zinc-300 text-zinc-500 hover:bg-zinc-200"}`}
                         >
                           Cancel Edit
                         </button>
@@ -281,7 +281,7 @@ export default function AttendancePage() {
                           </div>
 
                           {/* Horizontal progress bar */}
-                          <div className="w-full h-1.5 bg-zinc-800 rounded-full my-4 overflow-hidden">
+                          <div className={`w-full h-1.5 rounded-full my-4 overflow-hidden ${isDarkMode ? "bg-zinc-800" : "bg-zinc-300"}`}>
                             <div
                               className={`h-full rounded-full transition-all duration-500 ${isSafe ? "bg-[#06B6D4]" : "bg-red-500"}`}
                               style={{ width: `${Math.min(100, percent)}%` }}
@@ -289,8 +289,8 @@ export default function AttendancePage() {
                           </div>
 
                           {/* Dynamic indicators */}
-                          <div className="grid grid-cols-2 gap-2 p-2.5 bg-zinc-800/30 rounded-xl border border-zinc-800/50">
-                            <div className="text-center border-r border-zinc-800">
+                          <div className={`grid grid-cols-2 gap-2 p-2.5 rounded-xl border ${isDarkMode ? "bg-zinc-800/30 border-zinc-800/50" : "bg-zinc-100 border-zinc-300/50"}`}>
+                            <div className={`text-center border-r ${isDarkMode ? "border-zinc-800" : "border-zinc-300"}`}>
                               <span className="block text-[10px] font-bold text-zinc-500 uppercase">Skip Margin</span>
                               <span className={`text-base font-extrabold block ${isSafe ? "text-emerald-400" : "text-zinc-500"}`}>
                                 {isSafe ? `${skips} Classes` : "0"}
@@ -306,7 +306,7 @@ export default function AttendancePage() {
                         </div>
 
                         {/* Quick increment buttons */}
-                        <div className="flex items-center justify-between gap-3 mt-5 pt-4 border-t border-zinc-800/40">
+                        <div className={`flex items-center justify-between gap-3 mt-5 pt-4 border-t ${isDarkMode ? "border-zinc-800/40" : "border-zinc-300/40"}`}>
                           <div className="flex items-center gap-2">
                             <button
                               onClick={() => handleIncrementAttendance(item.id, true)}
@@ -343,7 +343,7 @@ export default function AttendancePage() {
                     );
                   })}
                   {attendance.length === 0 && (
-                    <div className="md:col-span-2 text-center border border-dashed border-zinc-800 rounded-2xl p-8">
+                    <div className={`md:col-span-2 text-center border border-dashed rounded-2xl p-8 ${isDarkMode ? "border-zinc-800" : "border-zinc-300"}`}>
                       <p className="text-sm font-bold text-zinc-300">No attendance trackers yet.</p>
                       <p className="text-xs text-zinc-500 mt-1">Add each subject once, then use the quick buttons after every class.</p>
                     </div>

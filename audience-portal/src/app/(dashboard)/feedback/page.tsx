@@ -237,7 +237,7 @@ export default function FeedbackPage() {
 
                     <div className="space-y-4">
                       {feedbackHistory.map(item => (
-                        <div key={item.id} className="p-3.5 border border-zinc-800 rounded-xl bg-zinc-900/10 space-y-2">
+                        <div key={item.id} className={`p-3.5 border rounded-xl space-y-2 ${isDarkMode ? "border-zinc-800 bg-zinc-900/10" : "border-zinc-300 bg-zinc-50"}`}>
                           <div className="flex items-center justify-between text-[10px] text-zinc-500 font-bold">
                             <span className="flex items-center gap-1 text-amber-400">
                               {Array.from({ length: item.rating }).map((_, i) => (
@@ -246,7 +246,7 @@ export default function FeedbackPage() {
                             </span>
                             <span>{item.date}</span>
                           </div>
-                          <p className="text-xs text-zinc-300 leading-normal">{item.message}</p>
+                          <p className={`text-xs leading-normal ${isDarkMode ? "text-zinc-300" : "text-zinc-700"}`}>{item.message}</p>
                         </div>
                       ))}
                     </div>

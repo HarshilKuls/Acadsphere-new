@@ -264,7 +264,7 @@ export default function TimetablePage() {
                         <button
                           type="button"
                           onClick={cancelTimetableEdit}
-                          className="rounded-lg border border-zinc-800 px-4 py-2.5 text-xs font-bold text-zinc-400 hover:bg-zinc-800/60 transition-all"
+                          className={`rounded-lg border px-4 py-2.5 text-xs font-bold transition-all ${isDarkMode ? "border-zinc-800 text-zinc-400 hover:bg-zinc-800/60" : "border-zinc-300 text-zinc-500 hover:bg-zinc-200"}`}
                         >
                           Cancel Edit
                         </button>
@@ -297,10 +297,10 @@ export default function TimetablePage() {
                   <div className="min-w-[800px] grid grid-cols-6 gap-4">
 
                     {/* Index Col */}
-                    <div className="space-y-3 font-semibold text-center border-r border-zinc-800/40 pr-2">
+                    <div className={`space-y-3 font-semibold text-center border-r pr-2 ${isDarkMode ? "border-zinc-800/40" : "border-zinc-300/40"}`}>
                       <div className="h-10 flex items-center justify-center text-zinc-500 text-[10px] uppercase font-bold">Weekdays</div>
                       {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map(day => (
-                        <div key={day} className="h-[88px] flex items-center justify-center text-xs text-zinc-400 font-bold">{day.slice(0, 3)}</div>
+                        <div key={day} className={`h-[88px] flex items-center justify-center text-xs font-bold ${isDarkMode ? "text-zinc-400" : "text-zinc-500"}`}>{day.slice(0, 3)}</div>
                       ))}
                     </div>
 
@@ -318,7 +318,7 @@ export default function TimetablePage() {
                                 {classes.map(item => (
                                   <div
                                     key={item.id}
-                                    className={`flex-shrink-0 w-48 rounded-xl border p-3 flex flex-col justify-between ${item.color} relative group ${currentClass?.id === item.id ? "ring-2 ring-[#06B6D4] ring-offset-2 ring-offset-[#09090B]" : ""}`}
+                                    className={`flex-shrink-0 w-48 rounded-xl border p-3 flex flex-col justify-between ${item.color} relative group ${currentClass?.id === item.id ? `ring-2 ring-[#06B6D4] ring-offset-2 ${isDarkMode ? "ring-offset-[#09090B]" : "ring-offset-white"}` : ""}`}
                                   >
                                     <div>
                                       <span className="text-xs font-bold block truncate">{item.subject}</span>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAcadsphere } from "@/context/AcadsphereContext";
 
 export default function Header() {
@@ -17,6 +17,11 @@ export default function Header() {
     isDarkMode,
     currentUser
   } = useAcadsphere();
+
+  // Keep header search in sync when librarySearch is changed externally (e.g. from E-Library page)
+  useEffect(() => {
+    setHeaderSearch(librarySearch);
+  }, [librarySearch]);
 
   if (!currentUser) return null;
 

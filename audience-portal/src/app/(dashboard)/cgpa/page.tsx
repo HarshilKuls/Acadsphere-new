@@ -195,7 +195,7 @@ export default function CGPAPage() {
 
                 {/* Semester selector & Input Form */}
                 <div className="glass-card rounded-2xl p-5">
-                  <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6 pb-4 border-b border-zinc-800/40">
+                    <div className={`flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6 pb-4 border-b ${isDarkMode ? "border-zinc-800/40" : "border-zinc-300/40"}`}>
                     <h3 className="text-xs font-bold tracking-wide text-zinc-500 uppercase">Grade Ledger Panel</h3>
 
                     <div className="flex items-center gap-1.5 overflow-x-auto py-1">
@@ -262,7 +262,7 @@ export default function CGPAPage() {
                           <button
                             type="button"
                             onClick={cancelCGPAEdit}
-                            className="rounded-lg border border-zinc-800 px-4 py-2.5 text-xs font-bold text-zinc-400 hover:bg-zinc-800/60 transition-all"
+                            className={`rounded-lg border px-4 py-2.5 text-xs font-bold transition-all ${isDarkMode ? "border-zinc-800 text-zinc-400 hover:bg-zinc-800/60" : "border-zinc-300 text-zinc-500 hover:bg-zinc-200"}`}
                           >
                             Cancel Edit
                           </button>
@@ -282,7 +282,7 @@ export default function CGPAPage() {
                 <div className="glass-card rounded-2xl p-5">
                   <div className="flex items-center justify-between mb-4">
                     <h4 className="text-xs font-bold tracking-wide text-zinc-500 uppercase">Grades Sheet - Semester {selectedSemester}</h4>
-                    <div className="text-xs font-bold text-zinc-400 bg-zinc-800/40 border border-zinc-800 px-3 py-1 rounded-lg">
+                    <div className={`text-xs font-bold text-zinc-400 border px-3 py-1 rounded-lg ${isDarkMode ? "bg-zinc-800/40 border-zinc-800" : "bg-zinc-200/40 border-zinc-300"}`}>
                       SGPA: <strong className="text-[#06B6D4]">{getSGPA(selectedSemester).toFixed(2)}</strong>
                     </div>
                   </div>
@@ -291,7 +291,7 @@ export default function CGPAPage() {
                     <div className="overflow-x-auto">
                       <table className="min-w-[560px] w-full text-left text-xs border-collapse">
                         <thead>
-                          <tr className="border-b border-zinc-800 text-zinc-500">
+                          <tr className={`border-b text-zinc-500 ${isDarkMode ? "border-zinc-800" : "border-zinc-300"}`}>
                             <th className="py-2.5">Subject</th>
                             <th className="py-2.5">Credits</th>
                             <th className="py-2.5">Grade</th>
@@ -301,7 +301,7 @@ export default function CGPAPage() {
                         </thead>
                         <tbody>
                           {cgpaSubjects.filter(s => s.semester === selectedSemester).map(item => (
-                            <tr key={item.id} className="border-b border-zinc-800/50 hover:bg-zinc-800/10">
+                            <tr key={item.id} className={`border-b ${isDarkMode ? "border-zinc-800/50 hover:bg-zinc-800/10" : "border-zinc-300/50 hover:bg-zinc-100"}`}>
                               <td className={`py-3 font-semibold ${isDarkMode ? "text-white" : "text-zinc-900"}`}>{item.subjectName}</td>
                               <td className="py-3 text-zinc-400">{item.credits}</td>
                               <td className="py-3 font-extrabold text-[#7C3AED]">{item.grade}</td>
@@ -328,7 +328,7 @@ export default function CGPAPage() {
                       </table>
                     </div>
                   ) : (
-                    <p className="text-xs text-zinc-500 text-center py-8 border border-dashed border-zinc-800 rounded-xl">
+                    <p className={`text-xs text-zinc-500 text-center py-8 border border-dashed rounded-xl ${isDarkMode ? "border-zinc-800" : "border-zinc-300"}`}>
                       No courses logged under Semester {selectedSemester}. Enter course details to compile SGPAs.
                     </p>
                   )}

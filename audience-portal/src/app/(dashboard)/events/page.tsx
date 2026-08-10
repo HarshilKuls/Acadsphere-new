@@ -222,7 +222,7 @@ export default function EventsPage() {
                             <img
                               src={ev.image}
                               alt={ev.title}
-                              className="h-44 w-full object-cover border-b border-zinc-800/40 group-hover:scale-105 transition-transform duration-500"
+                              className={`h-44 w-full object-cover group-hover:scale-105 transition-transform duration-500 border-b ${isDarkMode ? "border-zinc-800/40" : "border-zinc-300/40"}`}
                             />
                           ) : (
                             <div className="h-44 w-full border-b border-zinc-800/40 bg-gradient-to-br from-[#7C3AED]/35 via-[#18121f] to-[#06B6D4]/20" aria-hidden="true" />
@@ -253,7 +253,7 @@ export default function EventsPage() {
                       </div>
                     ))
                   ) : (
-                    <div className="col-span-full py-16 text-center border border-zinc-800/40 border-dashed rounded-2xl bg-zinc-900/20">
+                    <div className={`col-span-full py-16 text-center border border-dashed rounded-2xl ${isDarkMode ? "border-zinc-800/40 bg-zinc-900/20" : "border-zinc-300/40 bg-zinc-50"}`}>
                       <Code2 className="h-8 w-8 text-zinc-600 mx-auto mb-3" />
                       <p className="text-sm text-zinc-400 font-bold">No events found</p>
                       <p className="text-xs text-zinc-500 mt-1">Try adjusting your field focus.</p>
