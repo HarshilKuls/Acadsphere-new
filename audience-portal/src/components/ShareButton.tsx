@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { Share2 } from "lucide-react";
 
 export default function ShareButton() {
   const [showTooltip, setShowTooltip] = useState(false);
@@ -43,7 +44,7 @@ Follow our insta for more updates- https://www.instagram.com/acadsphere?igsh=N3R
         aria-label="Share Acadsphere"
         title="Share Acadsphere"
       >
-        <span className="material-symbols-outlined text-[18px]">share</span>
+        <Share2 className="w-4 h-4 shrink-0" />
         <span className="hidden sm:inline">Share</span>
       </button>
       

@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useAcadsphere } from "@/context/AcadsphereContext";
 import InstallAppButton from "./InstallAppButton";
 import ShareButton from "./ShareButton";
+import { Menu, Search, Sun, Moon, PenTool } from "lucide-react";
 
 export default function Header() {
   const [headerSearch, setHeaderSearch] = useState("");
@@ -36,11 +37,11 @@ export default function Header() {
         aria-controls="app-sidebar"
         aria-expanded={isSidebarOpen}
       >
-        <span className="material-symbols-outlined">menu</span>
+        <Menu className="w-5 h-5 shrink-0" />
       </button>
 
       <div className="search-wrapper">
-        <span className="material-symbols-outlined search-icon">search</span>
+        <Search className="w-4 h-4 shrink-0 search-icon" />
         <input
           type="search"
           className="search-input"
@@ -61,13 +62,15 @@ export default function Header() {
         <ShareButton />
 
         <button onClick={toggleTheme} className="icon-btn" aria-label="Toggle theme">
-          <span className="material-symbols-outlined">
-            {isDarkMode ? "light_mode" : "dark_mode"}
-          </span>
+          {isDarkMode ? (
+            <Sun className="w-4 h-4 text-amber-400 shrink-0" />
+          ) : (
+            <Moon className="w-4 h-4 text-indigo-500 shrink-0" />
+          )}
         </button>
 
-        <button className="icon-btn" aria-label="History" onClick={() => setActiveTab("Feedback")}>
-          <span className="material-symbols-outlined">history_edu</span>
+        <button className="icon-btn" aria-label="Feedback" onClick={() => setActiveTab("Feedback")} title="Feedback">
+          <PenTool className="w-4 h-4 shrink-0" />
         </button>
 
         <div className="nav-divider"></div>

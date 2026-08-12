@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { Download } from "lucide-react";
 
 export default function InstallAppButton() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -39,7 +40,7 @@ export default function InstallAppButton() {
       aria-label="Install App"
       title="Install Acadsphere as a mobile/desktop app"
     >
-      <span className="material-symbols-outlined text-[18px]">download</span>
+      <Download className="w-4 h-4 shrink-0" />
       <span className="hidden sm:inline">Install App</span>
     </button>
   );
