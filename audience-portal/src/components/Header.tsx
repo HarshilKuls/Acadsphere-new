@@ -2,6 +2,8 @@
 
 import React, { useState } from "react";
 import { useAcadsphere } from "@/context/AcadsphereContext";
+import InstallAppButton from "./InstallAppButton";
+import ShareButton from "./ShareButton";
 
 export default function Header() {
   const [headerSearch, setHeaderSearch] = useState("");
@@ -53,6 +55,9 @@ export default function Header() {
       </div>
 
       <div className="nav-actions">
+        <InstallAppButton />
+        <ShareButton />
+
         <button onClick={toggleTheme} className="icon-btn" aria-label="Toggle theme">
           <span className="material-symbols-outlined">
             {isDarkMode ? "light_mode" : "dark_mode"}
