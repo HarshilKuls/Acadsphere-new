@@ -35,7 +35,7 @@ export default function InstallAppButton() {
   return (
     <button
       onClick={handleInstallClick}
-      className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-full bg-blue-600/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400 hover:bg-blue-600/20 dark:hover:bg-blue-500/30 transition-colors mr-2"
+      className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-full bg-blue-600/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400 hover:bg-blue-600/20 dark:hover:bg-blue-500/30 transition-colors shrink-0"
       aria-label="Install App"
       title="Install Acadsphere as a mobile/desktop app"
     >

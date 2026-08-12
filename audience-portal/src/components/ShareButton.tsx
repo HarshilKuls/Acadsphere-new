@@ -39,7 +39,7 @@ Follow our insta for more updates- https://www.instagram.com/acadsphere?igsh=N3R
     <div className="relative flex items-center">
       <button
         onClick={handleShare}
-        className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-full bg-indigo-600/10 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400 hover:bg-indigo-600/20 dark:hover:bg-indigo-500/30 transition-colors mr-2"
+        className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-full bg-indigo-600/10 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400 hover:bg-indigo-600/20 dark:hover:bg-indigo-500/30 transition-colors shrink-0"
         aria-label="Share Acadsphere"
         title="Share Acadsphere"
       >

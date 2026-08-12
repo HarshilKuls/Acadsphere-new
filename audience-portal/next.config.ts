@@ -15,7 +15,7 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: "Content-Security-Policy",
-            value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://lrtywitlsyzkzsdhsnfv.supabase.co https://api.supabase.co wss://lrtywitlsyzkzsdhsnfv.supabase.co; frame-ancestors 'none';",
+            value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https:; connect-src 'self' https://lrtywitlsyzkzsdhsnfv.supabase.co https://api.supabase.co wss://lrtywitlsyzkzsdhsnfv.supabase.co https://openrouter.ai https://api-inference.huggingface.co; frame-ancestors 'none';",
           },
           {
             key: "X-Frame-Options",
