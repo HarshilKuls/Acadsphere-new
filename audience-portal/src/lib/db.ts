@@ -71,6 +71,23 @@ export interface FeedbackSubmission {
   date: string;
 }
 
+export interface BlogEntry {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt?: string;
+  content: string;
+  content_type: 'text' | 'html';
+  cover_image?: string;
+  status: 'draft' | 'published';
+  author_id?: string;
+  created_at?: string;
+  updated_at?: string;
+  published_at?: string;
+  is_always_running?: boolean;
+  expiry_date?: string;
+}
+
 export interface HackathonEvent {
   id: string;
   title: string;
@@ -80,6 +97,7 @@ export interface HackathonEvent {
   description: string;
   image: string;
   applyLink?: string;
+  deadlineDate?: string;
 }
 
 export interface InternshipListing {
@@ -91,6 +109,7 @@ export interface InternshipListing {
   duration: string;
   logo: string;
   applyLink?: string;
+  deadlineDate?: string;
 }
 
 export interface LibraryItem {
@@ -101,6 +120,13 @@ export interface LibraryItem {
   semester: string;
   size: string;
   downloadUrl: string;
+}
+
+export interface UnauthenticatedCheck {
+  id: string;
+  feature: string;
+  blog_slug?: string;
+  created_at: string;
 }
 
 // Helper database persistence functions
@@ -125,6 +151,40 @@ const setStorageItem = <T>(key: string, value: T): void => {
 // HYBRID DATABASE CONTROLLER WITH SUPABASE BACKEND
 // ----------------------------------------------------
 export const db = {
+  // Analytics
+  recordUnauthenticatedCheck: async (feature: string, blogSlug?: string): Promise<void> => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      // DO NOT track fully authenticated users
+      if (session?.user && session.user.role === 'authenticated') return;
+      
+      // Lightweight protection against obvious duplicate/spam fires in the same session
+      const sessionKey = `acadsphere_tracked_${feature}_${blogSlug || 'none'}`;
+      if (typeof window !== 'undefined' && window.sessionStorage) {
+        if (sessionStorage.getItem(sessionKey)) return;
+        sessionStorage.setItem(sessionKey, 'true');
+      }
+
+      const payload = {
+        feature,
+        blog_slug: blogSlug,
+      };
+
+      const { error } = await supabase.from('unauthenticated_checks').insert([payload]);
+      
+      if (error) {
+        console.error("Supabase INSERT failed for unauthenticated_checks:", error.message, error.details, error.hint);
+        // We do NOT use localStorage as a fallback here because it would create isolated
+        // fake data on the audience port that the admin portal (on a different port) could never read.
+        return;
+      }
+
+    } catch (e) {
+      console.error("Analytics recording encountered an exception:", e);
+    }
+  },
+
   // Sync all user profile data from Supabase
   syncUserData: async (userId: string): Promise<void> => {
     try {
@@ -221,6 +281,7 @@ export const db = {
       ...entry,
       id: entry.id || 'tt-' + Math.random().toString(36).substr(2, 9)
     };
+    if (newEntry.userId === 'guest') return newEntry;
     
     const index = entries.findIndex(e => e.id === newEntry.id);
     if (index >= 0) {
@@ -248,6 +309,7 @@ export const db = {
   },
 
   deleteTimetableEntry: (id: string): void => {
+    if (id.startsWith('tt-guest-') || id === 'guest') return; // Just in case, though guests don't trigger this normally
     const entries = getStorageItem<TimetableEntry[]>('acadsphere_timetable', []);
     setStorageItem('acadsphere_timetable', entries.filter(e => e.id !== id));
 
@@ -273,6 +335,7 @@ export const db = {
       ...entry,
       id: entry.id || 'att-' + Math.random().toString(36).substr(2, 9)
     };
+    if (newEntry.userId === 'guest') return newEntry;
 
     const index = entries.findIndex(e => e.id === newEntry.id);
     if (index >= 0) {
@@ -296,6 +359,7 @@ export const db = {
   },
 
   deleteAttendance: (id: string): void => {
+    if (id.startsWith('att-guest-') || id === 'guest') return;
     const entries = getStorageItem<AttendanceEntry[]>('acadsphere_attendance', []);
     setStorageItem('acadsphere_attendance', entries.filter(e => e.id !== id));
 
@@ -314,6 +378,7 @@ export const db = {
       ...subject,
       id: subject.id || 'cg-' + Math.random().toString(36).substr(2, 9)
     };
+    if (newSubject.userId === 'guest') return newSubject;
 
     const index = subjects.findIndex(s => s.id === newSubject.id);
     if (index >= 0) {
@@ -337,6 +402,7 @@ export const db = {
   },
 
   deleteCGPASubject: (id: string): void => {
+    if (id.startsWith('cg-guest-') || id === 'guest') return;
     const subjects = getStorageItem<CGPASubject[]>('acadsphere_cgpa', []);
     setStorageItem('acadsphere_cgpa', subjects.filter(s => s.id !== id));
 
@@ -355,6 +421,7 @@ export const db = {
       ...prediction,
       id: prediction.id || 'pred-' + Math.random().toString(36).substr(2, 9)
     };
+    if (newPred.userId === 'guest') return newPred;
 
     const index = predictions.findIndex(p => p.id === newPred.id);
     if (index >= 0) {
@@ -379,6 +446,7 @@ export const db = {
   },
 
   deleteMarksPrediction: (id: string): void => {
+    if (id.startsWith('pred-guest-') || id === 'guest') return;
     const predictions = getStorageItem<MarksPrediction[]>('acadsphere_predictions', []);
     setStorageItem('acadsphere_predictions', predictions.filter(p => p.id !== id));
 
@@ -399,6 +467,7 @@ export const db = {
       ...event,
       id: event.id || 'cal-' + Math.random().toString(36).substr(2, 9)
     };
+    if (newEvent.userId === 'guest') return newEvent;
 
     const index = events.findIndex(e => e.id === newEvent.id);
     if (index >= 0) {
@@ -435,6 +504,7 @@ export const db = {
   },
 
   deleteCalendarEvent: (id: string): void => {
+    if (id.startsWith('cal-guest-') || id === 'guest') return;
     const events = getStorageItem<CalendarEvent[]>('acadsphere_calendar', []);
     setStorageItem('acadsphere_calendar', events.filter(e => e.id !== id));
 
@@ -485,7 +555,8 @@ export const db = {
       type: item.category === 'Competition/Event' ? 'competition' : 'workshop',
       description: item.description || "",
       image: item.image || "",
-      applyLink: item.apply_link || ""
+      applyLink: item.apply_link || "",
+      deadlineDate: item.deadline_date || undefined
     }));
   },
 
@@ -506,7 +577,8 @@ export const db = {
       eligibility: item.qualification || "",
       duration: item.duration || "",
       logo: item.company_name ? item.company_name[0].toUpperCase() : "",
-      applyLink: item.apply_link || ""
+      applyLink: item.apply_link || "",
+      deadlineDate: item.deadline_date || undefined
     }));
   },
 
@@ -586,6 +658,68 @@ export const db = {
     } catch (e) {
       console.warn('Exception skipping onboarding:', e);
       return false;
+    }
+  },
+
+  getBlogs: async (onRefresh?: (data: BlogEntry[]) => void): Promise<BlogEntry[]> => {
+    try {
+      const cached = getStorageItem<BlogEntry[]>('acadsphere_blogs', []);
+      
+      // Fetch in background to update cache
+      const fetchPromise = supabase
+        .from('blogs')
+        .select('*')
+        .eq('status', 'published')
+        .order('published_at', { ascending: false })
+        .then(({ data, error }) => {
+          if (!error && data) {
+            const now = new Date();
+            now.setHours(0,0,0,0);
+            const validBlogs = data.filter(blog => {
+              if (blog.is_always_running !== false) return true;
+              if (!blog.expiry_date) return true;
+              const expiry = new Date(blog.expiry_date);
+              return now <= expiry;
+            });
+            setStorageItem('acadsphere_blogs', validBlogs);
+            if (onRefresh) onRefresh(validBlogs);
+            return validBlogs;
+          }
+          return null;
+        });
+
+      // Return immediately if cached
+      if (cached && cached.length > 0) {
+        // We don't await the fetchPromise to avoid blocking, but NextJS/React might want the latest data.
+        // Returning cached data immediately gives instant UX.
+        fetchPromise.catch(() => {}); 
+        return cached;
+      }
+
+      // If no cache, await the fetch
+      const result = await fetchPromise;
+      return result || [];
+
+    } catch (e) {
+      console.warn("Failed to fetch blogs:", e);
+      return getStorageItem<BlogEntry[]>('acadsphere_blogs', []);
+    }
+  },
+
+  getBlogBySlug: async (slug: string): Promise<BlogEntry | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('blogs')
+        .select('*')
+        .eq('slug', slug)
+        .eq('status', 'published')
+        .maybeSingle();
+        
+      if (error) throw error;
+      return data;
+    } catch (e) {
+      console.warn("Failed to fetch blog by slug:", e);
+      return null;
     }
   }
 };

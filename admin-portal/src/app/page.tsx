@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import {
   LayoutDashboard,
@@ -25,9 +25,10 @@ import {
   PlusCircle,
   CalendarDays,
   MessageSquare,
-  AlertCircle
+  AlertCircle,
+  FileText
 } from "lucide-react";
-import { adminDb, hashPassword, supabase, AdminAccount, EventEntry, InternshipEntry, LibraryResource, ReportedAccount, NonConfidentialUser, HolidayEntry, FeedbackEntry } from "@/lib/db";
+import { adminDb, hashPassword, supabase, AdminAccount, EventEntry, InternshipEntry, LibraryResource, ReportedAccount, NonConfidentialUser, HolidayEntry, FeedbackEntry, BlogEntry, UnauthenticatedCheck } from "@/lib/db";
 import { registerAdminAction } from "./actions";
 
 export default function Home() {
@@ -69,6 +70,47 @@ export default function Home() {
   const [holType, setHolType] = useState<'holiday' | 'exam' | 'deadline' | 'reminder'>('holiday');
   const [holColor, setHolColor] = useState<'violet' | 'cyan' | 'amber' | 'rose'>('violet');
 
+  // Blogs State
+  const [blogsFeed, setBlogsFeed] = useState<BlogEntry[]>([]);
+  const [unauthChecks, setUnauthChecks] = useState<UnauthenticatedCheck[]>([]);
+  const [blgId, setBlgId] = useState<string | null>(null);
+  const [blgTitle, setBlgTitle] = useState("");
+  const [blgSlug, setBlgSlug] = useState("");
+  const [blgExcerpt, setBlgExcerpt] = useState("");
+  const [blgContent, setBlgContent] = useState("");
+  const [blgContentType, setBlgContentType] = useState<'text' | 'html'>('text');
+  const [blgCoverImage, setBlgCoverImage] = useState("");
+  const [blgStatus, setBlgStatus] = useState<'draft' | 'published'>('draft');
+  const [blgIsAlwaysRunning, setBlgIsAlwaysRunning] = useState<boolean>(true);
+  const [blgExpiryDate, setBlgExpiryDate] = useState("");
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.endsWith('.html') && !file.name.endsWith('.htm')) {
+      triggerToast("Please select a valid HTML file (.html or .htm)");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target?.result;
+      if (typeof content === 'string') {
+        setBlgContent(content);
+        setBlgContentType('html');
+        triggerToast("HTML file loaded into editor");
+      }
+    };
+    reader.onerror = () => triggerToast("Failed to read the file");
+    reader.readAsText(file);
+
+    // reset input
+    if (e.target) e.target.value = '';
+  };
+
   // Notifications
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -90,6 +132,7 @@ export default function Home() {
   const [evImage, setEvImage] = useState("");
   const [evTags, setEvTags] = useState("");
   const [evCategory, setEvCategory] = useState<'Competition/Event' | 'News/Announcement'>('Competition/Event');
+  const [evDeadlineDate, setEvDeadlineDate] = useState("");
 
   // Internship Add/Edit
   const [intId, setIntId] = useState<string | null>(null);
@@ -101,6 +144,7 @@ export default function Home() {
   const [intQualification, setIntQualification] = useState("");
   const [intLocation, setIntLocation] = useState("");
   const [intDesc, setIntDesc] = useState("");
+  const [intDeadlineDate, setIntDeadlineDate] = useState("");
 
   // E-Library Add/Edit
   const [libId, setLibId] = useState<string | null>(null);
@@ -157,8 +201,8 @@ export default function Home() {
     const reportedFrame = requestAnimationFrame(() => setReportedAccounts(adminDb.getReportedAccounts()));
     const loadLiveContent = async () => {
       try {
-        const [events, internships, library, holidays, users, feedback] = await Promise.all([
-          adminDb.getEvents(), adminDb.getInternships(), adminDb.getLibrary(), adminDb.getHolidays(), adminDb.getNonConfidentialUsers(), adminDb.getFeedback()
+        const [events, internships, library, holidays, users, feedback, blogs, unauth] = await Promise.all([
+          adminDb.getEvents(), adminDb.getInternships(), adminDb.getLibrary(), adminDb.getHolidays(), adminDb.getNonConfidentialUsers(), adminDb.getFeedback(), adminDb.getBlogs(), adminDb.getUnauthenticatedChecks()
         ]);
         setEventsFeed(events);
         setInternshipsFeed(internships);
@@ -166,6 +210,8 @@ export default function Home() {
         setHolidaysFeed(holidays);
         setRegisteredUsers(users);
         setFeedbackList(feedback);
+        setBlogsFeed(blogs);
+        setUnauthChecks(unauth);
       } catch (error) {
         triggerToast(error instanceof Error ? error.message : "Unable to load live admin content.");
       }
@@ -179,6 +225,7 @@ export default function Home() {
       .on("postgres_changes", { event: "*", schema: "public", table: "e_library" }, loadLiveContent)
       .on("postgres_changes", { event: "*", schema: "public", table: "holidays" }, loadLiveContent)
       .on("postgres_changes", { event: "*", schema: "public", table: "feedback" }, loadLiveContent)
+      .on("postgres_changes", { event: "*", schema: "public", table: "blogs" }, loadLiveContent)
       .subscribe();
 
     return () => {
@@ -340,8 +387,8 @@ export default function Home() {
   // Events CRUD
   const handleSaveEvent = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!evTitle) {
-      triggerToast("Event/Announcement title is required.");
+    if (!evTitle || !evDeadlineDate) {
+      triggerToast("Event/Announcement Title and Registration Deadline are required.");
       return;
     }
 
@@ -356,7 +403,8 @@ export default function Home() {
         applyLink: evLink || undefined,
         image: evImage || undefined,
         tags: evTags || undefined,
-        category: evCategory
+        category: evCategory,
+        deadlineDate: evDeadlineDate ? `${evDeadlineDate}T12:00:00Z` : undefined
       });
 
       if (evId) {
@@ -377,6 +425,7 @@ export default function Home() {
       setEvLink("");
       setEvImage("");
       setEvTags("");
+      setEvDeadlineDate("");
     } catch (error) {
       triggerToast(error instanceof Error ? error.message : "Event could not be saved.");
     }
@@ -393,6 +442,7 @@ export default function Home() {
     setEvImage(evt.image || "");
     setEvTags(evt.tags || "");
     setEvCategory(evt.category);
+    setEvDeadlineDate(evt.deadlineDate ? evt.deadlineDate.slice(0, 10) : "");
     triggerToast(`Editing: ${evt.title}`);
   };
 
@@ -409,8 +459,8 @@ export default function Home() {
   // Internships CRUD
   const handleSaveInternship = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!intTitle) {
-      triggerToast("Internship Role Title is required.");
+    if (!intTitle || !intDeadlineDate) {
+      triggerToast("Internship Role Title and Application Deadline are required.");
       return;
     }
 
@@ -424,7 +474,8 @@ export default function Home() {
         stipend: intStipend || undefined,
         qualification: intQualification || undefined,
         location: intLocation || undefined,
-        description: intDesc || undefined
+        description: intDesc || undefined,
+        deadlineDate: intDeadlineDate ? `${intDeadlineDate}T12:00:00Z` : undefined
       });
 
       if (intId) {
@@ -445,6 +496,7 @@ export default function Home() {
       setIntQualification("");
       setIntLocation("");
       setIntDesc("");
+      setIntDeadlineDate("");
     } catch (error) {
       triggerToast(error instanceof Error ? error.message : "Internship could not be saved.");
     }
@@ -460,6 +512,7 @@ export default function Home() {
     setIntQualification(item.qualification || "");
     setIntLocation(item.location || "");
     setIntDesc(item.description || "");
+    setIntDeadlineDate(item.deadlineDate ? item.deadlineDate.slice(0, 10) : "");
     triggerToast(`Editing: ${item.companyName}`);
   };
 
@@ -604,32 +657,110 @@ export default function Home() {
       setHolTitle("");
       setHolDescription("");
       setHolDate("");
-      setHolType("holiday");
-      setHolColor("violet");
+      setHolType('holiday');
+      setHolColor('violet');
     } catch (error) {
-      triggerToast(error instanceof Error ? error.message : "Calendar event could not be saved.");
+      triggerToast(error instanceof Error ? error.message : "Holiday could not be saved.");
     }
   };
 
-  const handleEditHoliday = (h: HolidayEntry) => {
-    setHolId(h.id);
-    setHolTitle(h.title);
-    setHolDescription(h.description || "");
-    setHolDate(h.date);
-    setHolType(h.type);
-    setHolColor(h.color || "violet");
-    triggerToast(`Editing: ${h.title}`);
+  const handleEditHoliday = (item: HolidayEntry) => {
+    setHolId(item.id);
+    setHolTitle(item.title);
+    setHolDescription(item.description || "");
+    setHolDate(item.date);
+    setHolType(item.type);
+    setHolColor(item.color || 'violet');
+    triggerToast(`Editing: ${item.title}`);
   };
 
   const handleDeleteHoliday = async (id: string) => {
     try {
       await adminDb.deleteHoliday(id);
       setHolidaysFeed(holidaysFeed.filter(h => h.id !== id));
-      triggerToast("Calendar event deleted.");
+      triggerToast("Event deleted from calendar.");
     } catch (error) {
-      triggerToast(error instanceof Error ? error.message : "Calendar event could not be deleted.");
+      triggerToast(error instanceof Error ? error.message : "Holiday could not be deleted.");
     }
   };
+
+  // Blogs CRUD handlers
+  const handleSaveBlog = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!blgTitle || !blgSlug || !blgContent) {
+      triggerToast("Title, slug, and content are required.");
+      return;
+    }
+    if (!blgIsAlwaysRunning && !blgExpiryDate) {
+      triggerToast("Expiry date is required for limited time blogs.");
+      return;
+    }
+
+    try {
+      const saved = await adminDb.saveBlog({
+        id: blgId || undefined,
+        title: blgTitle,
+        slug: blgSlug,
+        excerpt: blgExcerpt || undefined,
+        content: blgContent,
+        content_type: blgContentType,
+        cover_image: blgCoverImage || undefined,
+        status: blgStatus,
+        author_id: currentAdmin?.id,
+        is_always_running: blgIsAlwaysRunning,
+        expiry_date: blgIsAlwaysRunning ? undefined : (blgExpiryDate ? `${blgExpiryDate}T12:00:00Z` : undefined)
+      });
+
+      if (blgId) {
+        setBlogsFeed(blogsFeed.map(b => b.id === blgId ? saved : b));
+        triggerToast("Blog updated!");
+      } else {
+        setBlogsFeed([...blogsFeed, saved]);
+        triggerToast("Blog created!");
+      }
+
+      // Reset Form
+      setBlgId(null);
+      setBlgTitle("");
+      setBlgSlug("");
+      setBlgExcerpt("");
+      setBlgContent("");
+      setBlgCoverImage("");
+      setBlgStatus('draft');
+      setBlgContentType('text');
+      setBlgIsAlwaysRunning(true);
+      setBlgExpiryDate("");
+    } catch (error) {
+      triggerToast(error instanceof Error ? error.message : "Blog could not be saved.");
+    }
+  };
+
+  const handleEditBlog = (item: BlogEntry) => {
+    setBlgId(item.id);
+    setBlgTitle(item.title);
+    setBlgSlug(item.slug);
+    setBlgExcerpt(item.excerpt || "");
+    setBlgContent(item.content);
+    setBlgContentType(item.content_type);
+    setBlgCoverImage(item.cover_image || "");
+    setBlgStatus(item.status);
+    setBlgIsAlwaysRunning(item.is_always_running ?? true);
+    setBlgExpiryDate(item.expiry_date ? item.expiry_date.slice(0, 10) : "");
+    triggerToast(`Editing: ${item.title}`);
+  };
+
+  const handleDeleteBlog = async (id: string) => {
+    if (!window.confirm("Are you sure you want to permanently delete this blog?")) return;
+    try {
+      await adminDb.deleteBlog(id);
+      setBlogsFeed(blogsFeed.filter(b => b.id !== id));
+      triggerToast("Blog deleted.");
+    } catch (error) {
+      triggerToast(error instanceof Error ? error.message : "Blog could not be deleted.");
+    }
+  };
+
+
 
   // Admin creation control (Master Only)
   const handleCreateAdmin = async (e: React.FormEvent) => {
@@ -852,6 +983,11 @@ export default function Home() {
                   {reportedAccounts.filter(r => r.status === 'Banned').length}
                 </span>
               </div>
+              
+              <div className="glass-card rounded-2xl p-5 text-center">
+                <span className="block text-[10px] font-bold text-zinc-500 uppercase mb-1">Unauthenticated Checks</span>
+                <span className="text-4xl font-extrabold text-white tracking-tight">{unauthChecks.length}</span>
+              </div>
 
             </div>
 
@@ -933,6 +1069,68 @@ export default function Home() {
         )}
 
         {/* ----------------------------------------------------
+            TAB: UNAUTHENTICATED CHECKS
+            ---------------------------------------------------- */}
+        {activeTab === "Unauthenticated Checks" && (
+          <div className="space-y-6">
+            <div className="glass-card rounded-2xl p-5">
+              <h3 className="text-xs font-bold tracking-wide text-zinc-500 uppercase mb-4 flex items-center gap-1.5">
+                <Users className="h-4 w-4 text-[#06B6D4]" /> Feature Breakdown
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {Object.entries(unauthChecks.filter(c => c.feature !== 'blog_view').reduce((acc, check) => {
+                  acc[check.feature] = (acc[check.feature] || 0) + 1;
+                  return acc;
+                }, {} as Record<string, number>)).map(([feature, count]) => (
+                  <div key={feature} className="p-4 rounded-xl border border-zinc-800 bg-[#161618] text-center">
+                    <span className="block text-[10px] font-bold text-zinc-500 uppercase mb-1">{feature.replace(/_/g, ' ')}</span>
+                    <span className="text-2xl font-extrabold text-white tracking-tight">{count as number}</span>
+                  </div>
+                ))}
+                {unauthChecks.filter(c => c.feature !== 'blog_view').length === 0 && (
+                  <div className="p-4 rounded-xl border border-zinc-800 bg-[#161618] text-center col-span-full">
+                    <span className="block text-[10px] font-bold text-zinc-500 uppercase">No feature usage recorded yet</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="glass-card rounded-2xl p-5">
+              <h3 className="text-xs font-bold tracking-wide text-zinc-500 uppercase mb-4 flex items-center gap-1.5">
+                <FileText className="h-4 w-4 text-[#7C3AED]" /> Blog View Breakdown
+              </h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm whitespace-nowrap">
+                  <thead className="text-[10px] text-zinc-500 uppercase tracking-wider border-b border-zinc-800/50">
+                    <tr>
+                      <th className="pb-3 font-semibold">Blog Slug</th>
+                      <th className="pb-3 font-semibold text-right">Views</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-800/20">
+                    {Object.entries(unauthChecks.filter(c => c.feature === 'blog_view').reduce((acc, check) => {
+                      const slug = check.blog_slug || 'Unknown';
+                      acc[slug] = (acc[slug] || 0) + 1;
+                      return acc;
+                    }, {} as Record<string, number>)).map(([slug, count]) => (
+                      <tr key={slug} className="transition-all hover:bg-zinc-800/10">
+                        <td className="py-3 font-bold">{slug}</td>
+                        <td className="py-3 text-right font-semibold text-[#06B6D4]">{count as number}</td>
+                      </tr>
+                    ))}
+                    {unauthChecks.filter(c => c.feature === 'blog_view').length === 0 && (
+                      <tr>
+                        <td colSpan={2} className="py-6 text-center text-xs text-zinc-500 italic">No blog views recorded yet.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ----------------------------------------------------
             TAB 2: EVENTS & ANNOUNCEMENTS MANAGER
             ---------------------------------------------------- */}
         {activeTab === "Events / Network" && (
@@ -989,6 +1187,17 @@ export default function Home() {
                       value={evDate}
                       onChange={e => setEvDate(e.target.value)}
                       placeholder="June 12-14, 2026"
+                      className={`w-full rounded-lg border px-3 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-white" : "border-zinc-300 bg-zinc-50 text-zinc-950"}`}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Registration Deadline (Required)</label>
+                    <input
+                      type="date"
+                      required
+                      value={evDeadlineDate}
+                      onChange={e => setEvDeadlineDate(e.target.value)}
                       className={`w-full rounded-lg border px-3 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-white" : "border-zinc-300 bg-zinc-50 text-zinc-950"}`}
                     />
                   </div>
@@ -1198,6 +1407,17 @@ export default function Home() {
                       value={intLocation}
                       onChange={e => setIntLocation(e.target.value)}
                       placeholder="Remote (US) / Hybrid"
+                      className={`w-full rounded-lg border px-3 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-white" : "border-zinc-300 bg-zinc-50 text-zinc-950"}`}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Application Deadline (Required)</label>
+                    <input
+                      type="date"
+                      required
+                      value={intDeadlineDate}
+                      onChange={e => setIntDeadlineDate(e.target.value)}
                       className={`w-full rounded-lg border px-3 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-white" : "border-zinc-300 bg-zinc-50 text-zinc-950"}`}
                     />
                   </div>
@@ -1989,6 +2209,273 @@ export default function Home() {
           </div>
         )}
 
+        {/* ----------------------------------------------------
+            TAB: BLOGS MANAGER
+            ---------------------------------------------------- */}
+        {activeTab === "Blogs Manager" && (
+          <div className="space-y-6">
+
+            {/* Input Form */}
+            <div className="glass-card rounded-2xl p-5">
+              <h3 className="text-xs font-bold tracking-wide text-zinc-500 uppercase mb-4 flex items-center gap-1.5">
+                <Plus className="h-4 w-4 text-[#06B6D4]" />
+                {blgId ? `Modify Blog: ${blgTitle}` : "Create New Blog"}
+              </h3>
+
+              <form onSubmit={handleSaveBlog} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Title (Required)</label>
+                      <input
+                        type="text"
+                        value={blgTitle}
+                        onChange={e => setBlgTitle(e.target.value)}
+                        placeholder="Blog Title"
+                        className={`w-full rounded-lg border px-3 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-white" : "border-zinc-300 bg-zinc-50 text-zinc-950"}`}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Slug (Required, Unique)</label>
+                      <input
+                        type="text"
+                        value={blgSlug}
+                        onChange={e => setBlgSlug(e.target.value)}
+                        placeholder="my-awesome-blog-post"
+                        className={`w-full rounded-lg border px-3 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-white" : "border-zinc-300 bg-zinc-50 text-zinc-950"}`}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Excerpt (Optional)</label>
+                      <textarea
+                        value={blgExcerpt}
+                        onChange={e => setBlgExcerpt(e.target.value)}
+                        placeholder="Brief summary..."
+                        rows={2}
+                        className={`w-full rounded-lg border px-3 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-white" : "border-zinc-300 bg-zinc-50 text-zinc-950"}`}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Content Type</label>
+                      <select
+                        value={blgContentType}
+                        onChange={e => setBlgContentType(e.target.value as "text" | "html")}
+                        className={`w-full rounded-lg border px-3 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-white" : "border-zinc-300 bg-zinc-50 text-zinc-950"}`}
+                      >
+                        <option value="text">Standard Text</option>
+                        <option value="html">Raw HTML Code</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Status</label>
+                      <select
+                        value={blgStatus}
+                        onChange={e => setBlgStatus(e.target.value as "draft" | "published")}
+                        className={`w-full rounded-lg border px-3 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-white" : "border-zinc-300 bg-zinc-50 text-zinc-950"}`}
+                      >
+                        <option value="draft">Draft</option>
+                        <option value="published">Published</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Cover Image URL (Optional)</label>
+                      <input
+                        type="text"
+                        value={blgCoverImage}
+                        onChange={e => setBlgCoverImage(e.target.value)}
+                        placeholder="https://..."
+                        className={`w-full rounded-lg border px-3 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-white" : "border-zinc-300 bg-zinc-50 text-zinc-950"}`}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Lifetime</label>
+                      <select
+                        value={blgIsAlwaysRunning ? "true" : "false"}
+                        onChange={e => {
+                          setBlgIsAlwaysRunning(e.target.value === "true");
+                          if (e.target.value === "true") setBlgExpiryDate("");
+                        }}
+                        className={`w-full rounded-lg border px-3 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-white" : "border-zinc-300 bg-zinc-50 text-zinc-950"}`}
+                      >
+                        <option value="true">Always Available</option>
+                        <option value="false">Expires / Limited Time</option>
+                      </select>
+                    </div>
+
+                    {!blgIsAlwaysRunning && (
+                      <div>
+                        <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Expiry Date (YYYY-MM-DD)</label>
+                        <input
+                          type="date"
+                          required
+                          value={blgExpiryDate}
+                          onChange={e => setBlgExpiryDate(e.target.value)}
+                          className={`w-full rounded-lg border px-3 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-white" : "border-zinc-300 bg-zinc-50 text-zinc-950"}`}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="block text-[10px] font-bold text-zinc-400 uppercase">Content (Required)</label>
+                    <div className="flex gap-2">
+                      <input 
+                        type="file" 
+                        accept=".html,.htm" 
+                        ref={fileInputRef}
+                        className="hidden"
+                        onChange={handleFileUpload}
+                      />
+                      <button 
+                        type="button" 
+                        onClick={() => fileInputRef.current?.click()}
+                        className="px-2 py-1 bg-zinc-800 text-[10px] font-bold text-zinc-300 rounded hover:bg-zinc-700 transition-colors"
+                      >
+                        Upload HTML
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={() => setIsPreviewOpen(true)}
+                        className="px-2 py-1 bg-[#06B6D4]/20 text-[10px] font-bold text-[#06B6D4] rounded hover:bg-[#06B6D4]/30 transition-colors"
+                      >
+                        Preview HTML
+                      </button>
+                    </div>
+                  </div>
+                  <textarea
+                    value={blgContent}
+                    onChange={e => setBlgContent(e.target.value)}
+                    placeholder={blgContentType === 'html' ? '<div><h1>Hello</h1>...</div>' : 'Blog content...'}
+                    rows={8}
+                    className={`w-full rounded-lg border px-3 py-2 text-xs transition-all font-mono ${isDarkMode ? "border-zinc-800 bg-[#121214] text-white" : "border-zinc-300 bg-zinc-50 text-zinc-950"}`}
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2">
+                  {blgId && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setBlgId(null);
+                        setBlgTitle("");
+                        setBlgSlug("");
+                        setBlgExcerpt("");
+                        setBlgContent("");
+                        setBlgContentType("text");
+                        setBlgCoverImage("");
+                        setBlgStatus("draft");
+                      }}
+                      className="px-4 py-2 rounded-lg text-xs font-bold border transition-all text-zinc-500 hover:bg-zinc-800/10 border-zinc-700"
+                    >
+                      Cancel
+                    </button>
+                  )}
+                  <button
+                    type="submit"
+                    className="px-4 py-2 rounded-lg bg-[#06B6D4] hover:bg-[#0891B2] text-xs font-bold text-white transition-all shadow-md active:scale-95 flex items-center gap-2"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    {blgId ? "Update Blog" : "Publish Blog"}
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {isPreviewOpen && (
+              <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 md:p-8">
+                <div className="w-full max-w-5xl h-full flex flex-col bg-white dark:bg-[#121214] rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 shadow-2xl">
+                  <div className="flex justify-between items-center p-4 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
+                    <h2 className="font-bold text-lg text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                      <Code2 className="w-5 h-5 text-[#06B6D4]" />
+                      HTML Preview
+                    </h2>
+                    <button 
+                      onClick={() => setIsPreviewOpen(false)}
+                      className="p-2 bg-zinc-200 dark:bg-zinc-800 rounded-lg hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors"
+                    >
+                      <X className="w-4 h-4 text-zinc-900 dark:text-zinc-100" />
+                    </button>
+                  </div>
+                  <div className="flex-1 bg-white relative p-4 overflow-auto">
+                    <iframe 
+                      srcDoc={blgContent} 
+                      sandbox=""
+                      className="w-full h-full border-0" 
+                      title="HTML Preview"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+
+            {/* List View */}
+            <div className="glass-card rounded-2xl p-5 overflow-x-auto">
+              <h3 className="text-xs font-bold tracking-wide text-zinc-500 uppercase mb-4 flex items-center gap-1.5">
+                <FileText className="h-4 w-4 text-[#7C3AED]" /> Live Blogs Database
+              </h3>
+              <table className="w-full text-left text-sm whitespace-nowrap">
+                <thead className="text-[10px] text-zinc-500 uppercase tracking-wider border-b border-zinc-800/50">
+                  <tr>
+                    <th className="pb-3 font-semibold w-1/3">Title</th>
+                    <th className="pb-3 font-semibold">Status</th>
+                    <th className="pb-3 font-semibold">Type</th>
+                    <th className="pb-3 font-semibold text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-800/20">
+                  {blogsFeed.map((b) => (
+                    <tr key={b.id} className="transition-all hover:bg-zinc-800/10">
+                      <td className="py-3">
+                        <span className="block font-bold">{b.title}</span>
+                        <span className="text-[10px] text-zinc-500 font-mono">{b.slug}</span>
+                      </td>
+                      <td className="py-3">
+                        <span className={`px-2 py-1 text-[9px] font-bold rounded uppercase ${b.status === 'published' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'}`}>
+                          {b.status}
+                        </span>
+                      </td>
+                      <td className="py-3">
+                        <span className="text-[10px] text-zinc-400 uppercase font-semibold">{b.content_type}</span>
+                      </td>
+                      <td className="py-3 text-right space-x-2">
+                        <button
+                          onClick={() => handleEditBlog(b)}
+                          className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-lg border border-zinc-700 bg-zinc-800/30 text-white hover:bg-zinc-700"
+                        >
+                          <Edit className="h-3 w-3" /> Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteBlog(b.id)}
+                          className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-lg border border-red-500/30 bg-red-500/10 text-red-500 hover:bg-red-500/20"
+                        >
+                          <Trash2 className="h-3 w-3" /> Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {blogsFeed.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className="py-6 text-center text-xs text-zinc-500 italic">No blogs created yet.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+        )}
+
       </main>
 
       {/* ----------------------------------------------------
@@ -2019,10 +2506,12 @@ export default function Home() {
             <div className="space-y-1 px-3">
               {[
                 { label: "Dashboard", icon: LayoutDashboard },
+                { label: "Unauthenticated Checks", icon: Users },
                 { label: "Events / Network", icon: Code2 },
                 { label: "Internship", icon: Briefcase },
                 { label: "E-Library", icon: BookOpen },
                 { label: "Calendar / Holidays", icon: CalendarDays },
+                { label: "Blogs Manager", icon: FileText },
                 { label: "Admin Access Control", icon: ShieldAlert },
                 { label: "Reported Accounts", icon: UserX },
                 { label: "User Feedback", icon: MessageSquare },

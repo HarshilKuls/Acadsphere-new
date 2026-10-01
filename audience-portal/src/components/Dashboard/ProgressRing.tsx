@@ -7,7 +7,7 @@ interface ProgressRingProps {
   momentum: number;
 }
 
-export default function ProgressRing({ score,  xpGained, momentum }: ProgressRingProps) {
+export default function ProgressRing({ score, xpGained, momentum }: ProgressRingProps) {
   const radius = 82;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (score / 100) * circumference;
@@ -15,18 +15,18 @@ export default function ProgressRing({ score,  xpGained, momentum }: ProgressRin
   return (
     <div className="lg:col-span-4 glass-card flex flex-col justify-between items-center relative overflow-hidden p-5">
       <div className="relative h-44 w-44 flex items-center justify-center">
-        <svg className="w-full h-full transform -rotate-90" viewBox="0 0 192 192">
-          <circle 
-            cx="96" cy="96" r={radius} 
-            className="stroke-[var(--outline-dim)]" 
-            strokeWidth="11" fill="none" 
+        <svg className="w-full h-full transform -rotate-90" viewBox="0 0 192 192" aria-label={`Circular progress chart showing ${score}% attendance today`}>
+          <circle
+            cx="96" cy="96" r={radius}
+            className="stroke-[var(--outline-dim)]"
+            strokeWidth="11" fill="none"
           />
-          <circle 
-            cx="96" cy="96" r={radius} 
+          <circle
+            cx="96" cy="96" r={radius}
             className="stroke-[var(--accent)] transition-all duration-1000"
-            strokeWidth="11" 
+            strokeWidth="11"
             strokeLinecap="round"
-            fill="none" 
+            fill="none"
             strokeDasharray={circumference}
             strokeDashoffset={strokeDashoffset}
           />
@@ -36,7 +36,7 @@ export default function ProgressRing({ score,  xpGained, momentum }: ProgressRin
           <span className="text-[8px] font-bold text-[var(--muted)] uppercase tracking-widest mt-1">Today&apos;s Progress</span>
         </div>
       </div>
-      
+
       <div className="grid grid-cols-2 gap-3 w-full mt-4">
         <div className="text-center p-2.5 rounded-xl bg-[var(--surface-high)] border border-[var(--outline-dim)]">
           <span className="text-sm font-extrabold text-[var(--foreground)] block mb-0.5">{xpGained}</span>

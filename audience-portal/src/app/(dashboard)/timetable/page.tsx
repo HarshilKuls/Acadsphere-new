@@ -22,6 +22,7 @@ import {
 import { StudentUser, TimetableEntry, AttendanceEntry, CGPASubject, MarksPrediction, CalendarEvent, FeedbackSubmission, HackathonEvent, InternshipListing, LibraryItem } from "@/lib/db";
 import TimetableUpload from "@/components/Dashboard/TimetableUpload";
 import { useAcadsphere } from "@/context/AcadsphereContext";
+import PageHero from "@/components/PageHero";
 
 
 export default function TimetablePage() {
@@ -41,11 +42,6 @@ export default function TimetablePage() {
     password, setPassword,
     confirmPassword, setConfirmPassword,
     authError, setAuthError,
-    editFullName, setEditFullName,
-    editCollege, setEditCollege,
-    editCourse, setEditCourse,
-    editYear, setEditYear,
-    isSavingProfile, setIsSavingProfile,
     authProvider, setAuthProvider,
     isChangePasswordOpen, setIsChangePasswordOpen,
     changeCurrentPassword, setChangeCurrentPassword,
@@ -118,7 +114,6 @@ export default function TimetablePage() {
     handleSignOut,
     handleOnboardingComplete,
     handleOnboardingSkip,
-    handleSaveProfile,
     handlePasswordChange,
     handleAddTimetable,
     handleEditTimetable,
@@ -171,206 +166,252 @@ export default function TimetablePage() {
     currentClass
   } = useAcadsphere();
 
+  const [mobileActiveDay, setMobileActiveDay] = React.useState(currentDayName === "Sunday" ? "Monday" : currentDayName);
 
   if (!currentUser) return null;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-6">
+      <PageHero title="YOUR SCHEDULE" compactMobile={true} />
 
-                {/* Input Schedule Form */}
-                <div className="glass-card rounded-2xl p-5">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-xs font-bold tracking-wide text-zinc-500 uppercase flex items-center gap-1.5">
-                      <Plus className="h-4 w-4 text-[#7C3AED]" /> Log Course Schedule
-                    </h3>
-                    <button
-                      onClick={() => setIsUploadModalOpen(true)}
-                      className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-purple-600 to-cyan-500 px-3.5 py-2 text-[10px] font-bold text-white shadow-md hover:shadow-lg transition-all active:scale-95"
-                    >
-                      <Sparkles className="h-3.5 w-3.5" /> Upload Timetable (AI)
-                    </button>
-                  </div>
+      {/* Input Schedule Form */}
+      <div className="glass-card rounded-2xl p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-xs font-bold tracking-wide text-zinc-500 uppercase flex items-center gap-1.5">
+            <Plus className="h-4 w-4 text-[var(--accent)]" /> Log Course Schedule
+          </h3>
+          <button
+            onClick={() => setIsUploadModalOpen(true)}
+            className="flex items-center gap-1.5 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] px-3.5 py-2 text-[10px] font-bold text-white shadow-md hover:shadow-lg transition-all active:scale-95"
+          >
+            <Sparkles className="h-3.5 w-3.5" /> Upload Timetable (AI)
+          </button>
+        </div>
 
-                  <form onSubmit={handleAddTimetable} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
-                    <div>
-                      <label htmlFor="input-course-subject-2" className="block text-[10px] font-bold text-zinc-400 uppercase mb-1.5">Course Subject</label>
-                      <input id="input-course-subject-2"
-                        type="text"
-                        value={ttSubject}
-                        onChange={e => setTtSubject(e.target.value)}
-                        placeholder="Computer Networks"
-                        className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="input-instructor-faculty-3" className="block text-[10px] font-bold text-zinc-400 uppercase mb-1.5">Instructor / Faculty</label>
-                      <input id="input-instructor-faculty-3"
-                        type="text"
-                        value={ttFaculty}
-                        onChange={e => setTtFaculty(e.target.value)}
-                        placeholder="Dr. Alan Turing"
-                        className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="input-room-code-4" className="block text-[10px] font-bold text-zinc-400 uppercase mb-1.5">Room Code</label>
-                      <input id="input-room-code-4"
-                        type="text"
-                        value={ttRoom}
-                        onChange={e => setTtRoom(e.target.value)}
-                        placeholder="Lab-304"
-                        className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="input-weekday-day-5" className="block text-[10px] font-bold text-zinc-400 uppercase mb-1.5">Weekday Day</label>
-                      <select id="input-weekday-day-5"
-                        value={ttDay}
-                        onChange={e => setTtDay(e.target.value)}
-                        className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
-                      >
-                        <option>Monday</option>
-                        <option>Tuesday</option>
-                        <option>Wednesday</option>
-                        <option>Thursday</option>
-                        <option>Friday</option>
-                        <option>Saturday</option>
-                      </select>
-                    </div>
+        <form onSubmit={handleAddTimetable} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+          <div>
+            <label htmlFor="input-course-subject-2" className="block text-[10px] font-bold text-zinc-400 uppercase mb-1.5">Course Subject</label>
+            <input id="input-course-subject-2"
+              type="text"
+              value={ttSubject}
+              onChange={e => setTtSubject(e.target.value)}
+              placeholder="Computer Networks"
+              className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[var(--accent-50)] focus:border-[var(--accent)]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[var(--accent-20)] focus:border-[var(--accent)]"}`}
+            />
+          </div>
+          <div>
+            <label htmlFor="input-instructor-faculty-3" className="block text-[10px] font-bold text-zinc-400 uppercase mb-1.5">Instructor / Faculty</label>
+            <input id="input-instructor-faculty-3"
+              type="text"
+              value={ttFaculty}
+              onChange={e => setTtFaculty(e.target.value)}
+              placeholder="Dr. Alan Turing"
+              className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[var(--accent-50)] focus:border-[var(--accent)]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[var(--accent-20)] focus:border-[var(--accent)]"}`}
+            />
+          </div>
+          <div>
+            <label htmlFor="input-room-code-4" className="block text-[10px] font-bold text-zinc-400 uppercase mb-1.5">Room Code</label>
+            <input id="input-room-code-4"
+              type="text"
+              value={ttRoom}
+              onChange={e => setTtRoom(e.target.value)}
+              placeholder="Lab-304"
+              className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[var(--accent-50)] focus:border-[var(--accent)]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[var(--accent-20)] focus:border-[var(--accent)]"}`}
+            />
+          </div>
+          <div>
+            <label htmlFor="input-weekday-day-5" className="block text-[10px] font-bold text-zinc-400 uppercase mb-1.5">Weekday Day</label>
+            <select id="input-weekday-day-5"
+              value={ttDay}
+              onChange={e => setTtDay(e.target.value)}
+              className={`w-full rounded-lg border px-3.5 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[var(--accent-50)] focus:border-[var(--accent)]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[var(--accent-20)] focus:border-[var(--accent)]"}`}
+            >
+              <option>Monday</option>
+              <option>Tuesday</option>
+              <option>Wednesday</option>
+              <option>Thursday</option>
+              <option>Friday</option>
+              <option>Saturday</option>
+            </select>
+          </div>
 
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <label htmlFor="input-starts-at-6" className="block text-[10px] font-bold text-zinc-400 uppercase mb-1.5">Starts At</label>
-                        <input id="input-starts-at-6"
-                          type="time"
-                          value={ttStart}
-                          onChange={e => setTtStart(e.target.value)}
-                          className={`w-full rounded-lg border px-3 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor="input-ends-at-7" className="block text-[10px] font-bold text-zinc-400 uppercase mb-1.5">Ends At</label>
-                        <input id="input-ends-at-7"
-                          type="time"
-                          value={ttEnd}
-                          onChange={e => setTtEnd(e.target.value)}
-                          className={`w-full rounded-lg border px-3 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[#7c5cff]/30 focus:border-[#7c5cff]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[#7c5cff]/20 focus:border-[#7c5cff]"}`}
-                        />
-                      </div>
-                    </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label htmlFor="input-starts-at-6" className="block text-[10px] font-bold text-zinc-400 uppercase mb-1.5">Starts At</label>
+              <input id="input-starts-at-6"
+                type="time"
+                value={ttStart}
+                onChange={e => setTtStart(e.target.value)}
+                className={`w-full rounded-lg border px-3 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[var(--accent-50)] focus:border-[var(--accent)]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[var(--accent-20)] focus:border-[var(--accent)]"}`}
+              />
+            </div>
+            <div>
+              <label htmlFor="input-ends-at-7" className="block text-[10px] font-bold text-zinc-400 uppercase mb-1.5">Ends At</label>
+              <input id="input-ends-at-7"
+                type="time"
+                value={ttEnd}
+                onChange={e => setTtEnd(e.target.value)}
+                className={`w-full rounded-lg border px-3 py-2 text-xs transition-all ${isDarkMode ? "border-zinc-800 bg-[#121214] text-zinc-100 focus:ring-2 focus:ring-[var(--accent-50)] focus:border-[var(--accent)]" : "border-zinc-250 bg-zinc-50 text-zinc-900 focus:ring-2 focus:ring-[var(--accent-20)] focus:border-[var(--accent)]"}`}
+              />
+            </div>
+          </div>
 
-                    <div className="lg:col-span-3 flex justify-end gap-3">
-                      {ttEditingId && (
-                        <button
-                          type="button"
-                          onClick={cancelTimetableEdit}
-                          className={`rounded-lg border px-4 py-2.5 text-xs font-bold transition-all ${isDarkMode ? "border-zinc-800 text-zinc-400 hover:bg-zinc-800/60" : "border-zinc-300 text-zinc-500 hover:bg-zinc-200"}`}
+          <div className="lg:col-span-3 flex justify-end gap-3">
+            {ttEditingId && (
+              <button
+                type="button"
+                onClick={cancelTimetableEdit}
+                className={`rounded-lg border px-4 py-2.5 text-xs font-bold transition-all ${isDarkMode ? "border-zinc-800 text-zinc-400 hover:bg-zinc-800/60" : "border-zinc-300 text-zinc-500 hover:bg-zinc-200"}`}
+              >
+                Cancel Edit
+              </button>
+            )}
+            <button
+              type="submit"
+              className="rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] px-4 py-2.5 text-xs font-bold text-white transition-all shadow-md active:scale-95"
+            >
+              {ttEditingId ? "Update Lecture Block" : "Add Lecture Block"}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {/* Weekly Timetable Grid Board */}
+      <div className="glass-card rounded-2xl p-5 overflow-x-auto">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-xs font-bold tracking-wide text-zinc-500 uppercase">Weekly Lecture Grid</h3>
+          {timetable.length > 0 && (
+            <button
+              onClick={() => setIsClearAllModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-500/20 bg-red-500/5 hover:bg-red-500/10 text-red-400 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Clear All
+            </button>
+          )}
+        </div>
+
+        <div className="min-w-[800px] hidden md:grid grid-cols-6 gap-4">
+
+          {/* Index Col */}
+          <div className={`space-y-3 font-semibold text-center border-r pr-2 ${isDarkMode ? "border-zinc-800/40" : "border-zinc-300/40"}`}>
+            <div className="h-10 flex items-center justify-center text-zinc-500 text-[10px] uppercase font-bold">Weekdays</div>
+            {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map(day => (
+              <div key={day} className={`h-[88px] flex items-center justify-center text-xs font-bold ${isDarkMode ? "text-zinc-400" : "text-zinc-500"}`}>{day.slice(0, 3)}</div>
+            ))}
+          </div>
+
+          {/* Schedule rows: a single right-hand column keeps every weekday aligned with its label. */}
+          <div className="col-span-5 grid grid-rows-[repeat(6,88px)] gap-3 pt-[52px]">
+            {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map(dayName => {
+              const classes = timetable
+                .filter(t => t.day.toLowerCase() === dayName.toLowerCase())
+                .sort((a, b) => a.startTime.localeCompare(b.startTime));
+              return (
+                <div key={dayName} className="relative min-h-0">
+
+                  {classes.length > 0 ? (
+                    <div className="flex h-full items-stretch gap-3 overflow-x-auto py-1">
+                      {classes.map(item => (
+                        <div
+                          key={item.id}
+                          className={`flex-shrink-0 w-48 rounded-xl border p-3 flex flex-col justify-between ${item.color} relative group ${currentClass?.id === item.id ? `ring-2 ring-[var(--accent)] ring-offset-2 ${isDarkMode ? "ring-offset-[#09090B]" : "ring-offset-white"}` : ""}`}
                         >
-                          Cancel Edit
-                        </button>
-                      )}
-                      <button
-                        type="submit"
-                        className="rounded-lg bg-[#7C3AED] hover:bg-[#6D28D9] px-4 py-2.5 text-xs font-bold text-white transition-all shadow-md active:scale-95"
-                      >
-                        {ttEditingId ? "Update Lecture Block" : "Add Lecture Block"}
-                      </button>
-                    </div>
-                  </form>
-                </div>
+                          <div>
+                            <span className="text-xs font-bold block truncate">{item.subject}</span>
+                            <span className="text-[9px] opacity-80 block truncate">Room: {item.room} &bull; {item.faculty}</span>
+                          </div>
 
-                {/* Weekly Timetable Grid Board */}
-                <div className="glass-card rounded-2xl p-5 overflow-x-auto">
-                  <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-xs font-bold tracking-wide text-zinc-500 uppercase">Weekly Lecture Grid</h3>
-                    {timetable.length > 0 && (
-                      <button
-                        onClick={() => setIsClearAllModalOpen(true)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-500/20 bg-red-500/5 hover:bg-red-500/10 text-red-400 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                        Clear All
-                      </button>
-                    )}
-                  </div>
+                          <div className="flex items-center justify-between mt-2 pt-2 border-t border-current/10">
+                            <span className="text-[9px] font-bold">{item.startTime} - {item.endTime}</span>
 
-                  <div className="min-w-[800px] grid grid-cols-6 gap-4">
-
-                    {/* Index Col */}
-                    <div className={`space-y-3 font-semibold text-center border-r pr-2 ${isDarkMode ? "border-zinc-800/40" : "border-zinc-300/40"}`}>
-                      <div className="h-10 flex items-center justify-center text-zinc-500 text-[10px] uppercase font-bold">Weekdays</div>
-                      {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map(day => (
-                        <div key={day} className={`h-[88px] flex items-center justify-center text-xs font-bold ${isDarkMode ? "text-zinc-400" : "text-zinc-500"}`}>{day.slice(0, 3)}</div>
+                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                              <button
+                                onClick={() => handleEditTimetable(item)}
+                                className="p-1 text-zinc-500 hover:text-[var(--accent)] transition-all"
+                                title="Edit lecture block"
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteTimetable(item.id)}
+                                className="p-1 text-red-500 hover:text-red-400 transition-all"
+                                title="Delete lecture block"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
                       ))}
                     </div>
-
-                    {/* Schedule rows: a single right-hand column keeps every weekday aligned with its label. */}
-                    <div className="col-span-5 grid grid-rows-[repeat(6,88px)] gap-3 pt-[52px]">
-                      {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map(dayName => {
-                        const classes = timetable
-                          .filter(t => t.day.toLowerCase() === dayName.toLowerCase())
-                          .sort((a, b) => a.startTime.localeCompare(b.startTime));
-                        return (
-                          <div key={dayName} className="relative min-h-0">
-
-                            {classes.length > 0 ? (
-                              <div className="flex h-full items-stretch gap-3 overflow-x-auto py-1">
-                                {classes.map(item => (
-                                  <div
-                                    key={item.id}
-                                    className={`flex-shrink-0 w-48 rounded-xl border p-3 flex flex-col justify-between ${item.color} relative group ${currentClass?.id === item.id ? `ring-2 ring-[#06B6D4] ring-offset-2 ${isDarkMode ? "ring-offset-[#09090B]" : "ring-offset-white"}` : ""}`}
-                                  >
-                                    <div>
-                                      <span className="text-xs font-bold block truncate">{item.subject}</span>
-                                      <span className="text-[9px] opacity-80 block truncate">Room: {item.room} &bull; {item.faculty}</span>
-                                    </div>
-
-                                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-current/10">
-                                      <span className="text-[9px] font-bold">{item.startTime} - {item.endTime}</span>
-
-                                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                                        <button
-                                          onClick={() => handleEditTimetable(item)}
-                                          className="p-1 text-zinc-500 hover:text-[#06B6D4] transition-all"
-                                          title="Edit lecture block"
-                                        >
-                                          <Pencil className="h-3.5 w-3.5" />
-                                        </button>
-                                        <button
-                                          onClick={() => handleDeleteTimetable(item.id)}
-                                          className="p-1 text-red-500 hover:text-red-400 transition-all"
-                                          title="Delete lecture block"
-                                        >
-                                          <Trash2 className="h-3.5 w-3.5" />
-                                        </button>
-                                      </div>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            ) : (
-                              <div className="flex items-center pl-4 text-[10px] text-zinc-600 font-semibold italic h-16">
-                                No lectures scheduled
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
+                  ) : (
+                    <div className="flex items-center pl-4 text-[10px] text-zinc-600 font-semibold italic h-16">
+                      No lectures scheduled
                     </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
 
+        </div>
+
+        {/* Mobile Schedule View */}
+        <div className="md:hidden mt-2">
+          <div className="flex gap-2 overflow-x-auto pb-4 mb-4" style={{ scrollbarWidth: "none" }}>
+            {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map(day => (
+              <button
+                key={day}
+                onClick={() => {
+                  setMobileActiveDay(day);
+                  setTtDay(day);
+                }}
+                className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all flex-shrink-0 ${mobileActiveDay === day ? "bg-[var(--accent)] text-white shadow-md shadow-[var(--accent-glow)]" : "bg-[var(--surface-top)] text-[var(--muted)] hover:bg-[var(--surface-top)]/80"}`}
+              >
+                {day}
+              </button>
+            ))}
+          </div>
+          <div className="space-y-3">
+            {timetable.filter(t => t.day.toLowerCase() === mobileActiveDay.toLowerCase()).sort((a, b) => a.startTime.localeCompare(b.startTime)).length > 0 ? (
+              timetable.filter(t => t.day.toLowerCase() === mobileActiveDay.toLowerCase()).sort((a, b) => a.startTime.localeCompare(b.startTime)).map(item => (
+                <div key={item.id} className={`p-4 rounded-xl border flex flex-col ${item.color} relative ${currentClass?.id === item.id ? "ring-2 ring-[var(--accent)]" : ""}`}>
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <h4 className="font-bold text-sm text-white truncate">{item.subject}</h4>
+                      <p className="text-[10px] opacity-80 mt-0.5 text-white truncate">{item.faculty} &bull; Room {item.room}</p>
+                    </div>
+                    <div className="flex gap-2 shrink-0">
+                      <button onClick={() => handleEditTimetable(item)} className="p-1.5 rounded-lg bg-black/20 hover:bg-black/30 text-white transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
+                      <button onClick={() => handleDeleteTimetable(item.id)} className="p-1.5 rounded-lg bg-black/20 hover:bg-black/30 text-white transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-white/20">
+                    <Clock className="w-3 h-3 text-white" />
+                    <span className="text-[10px] font-bold tracking-wide text-white">{item.startTime} - {item.endTime}</span>
                   </div>
                 </div>
-
-                {/* AI Upload Modal */}
-                {isUploadModalOpen && (
-                  <TimetableUpload
-                    isDarkMode={isDarkMode}
-                    onImport={handleImportExtracted}
-                    onClose={() => setIsUploadModalOpen(false)}
-                    triggerToast={triggerToast}
-                  />
-                )}
-
+              ))
+            ) : (
+              <div className="py-8 text-center bg-[var(--surface-top)] rounded-xl border border-[var(--outline-dim)]">
+                <p className="text-xs text-[var(--muted)] font-medium">No classes scheduled for {mobileActiveDay}</p>
               </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* AI Upload Modal */}
+      {isUploadModalOpen && (
+        <TimetableUpload
+          isDarkMode={isDarkMode}
+          onImport={handleImportExtracted}
+          onClose={() => setIsUploadModalOpen(false)}
+          triggerToast={triggerToast}
+        />
+      )}
+
+    </div>
   );
 }

@@ -3,6 +3,10 @@
 import React from "react";
 import Navbar from "@/components/homepage/Navbar";
 import Hero from "@/components/homepage/Hero";
+import SignalRouterSection from "@/components/homepage/SignalRouterSection";
+import ModulesSection from "@/components/homepage/ModulesSection";
+import HowItWorksSection from "@/components/homepage/HowItWorksSection";
+import CtaBand from "@/components/homepage/CtaBand";
 import Footer from "@/components/homepage/Footer";
 import { useAcadsphere } from "@/context/AcadsphereContext";
 import { X, Clock, User } from "lucide-react";
@@ -10,7 +14,6 @@ import { X, Clock, User } from "lucide-react";
 export default function LandingPage() {
   const {
     isDarkMode,
-    toggleTheme,
     isLoginView,
     setIsLoginView,
     email,
@@ -37,12 +40,13 @@ export default function LandingPage() {
     handleResendVerification,
     isResetSuccess,
     setIsResetSuccess,
-    handleForgotPassword
+    handleForgotPassword,
+    handleContinueAsGuest
   } = useAcadsphere();
 
   if (isBannedView) {
     return (
-      <div className={`flex min-h-screen items-center justify-center p-4 transition-colors duration-300 ${isDarkMode ? "bg-[#09090f] text-[#e6e0ee]" : "bg-[#f4f1fb] text-[#1c1a24]"}`}>
+      <div className="flex min-h-screen items-center justify-center p-4 transition-colors duration-300 bg-[#09090f] text-[#e6e0ee]">
         <div className={`relative w-full max-w-md overflow-hidden rounded-2xl border p-8 shadow-2xl text-center bg-white/85 dark:bg-[#14121b]/80 border-zinc-200 dark:border-red-500/20 shadow-red-500/5`}>
           <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-red-500/15 text-red-500 mb-4 animate-bounce">
             <X className="h-6 w-6" />
@@ -65,7 +69,7 @@ export default function LandingPage() {
 
   if (isVerificationPending) {
     return (
-      <div className={`flex min-h-screen items-center justify-center p-4 transition-colors duration-300 ${isDarkMode ? "bg-[#09090f] text-[#e6e0ee]" : "bg-[#f4f1fb] text-[#1c1a24]"}`}>
+      <div className="flex min-h-screen items-center justify-center p-4 transition-colors duration-300 bg-[#09090f] text-[#e6e0ee]">
         <div className={`relative w-full max-w-md overflow-hidden rounded-2xl border p-8 shadow-2xl text-center bg-white/85 dark:bg-[#14121b]/80 border-zinc-200 dark:border-[#06B6D4]/20 shadow-[#06B6D4]/5`}>
           <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#06B6D4]/15 text-[#06B6D4] mb-4 animate-pulse">
             <Clock className="h-6 w-6" />
@@ -102,7 +106,7 @@ export default function LandingPage() {
 
   if (isForgotPasswordView) {
     return (
-      <div className={`flex min-h-screen items-center justify-center p-4 transition-colors duration-300 ${isDarkMode ? "bg-[#09090f] text-[#e6e0ee]" : "bg-[#f4f1fb] text-[#1c1a24]"}`}>
+      <div className="flex min-h-screen items-center justify-center p-4 transition-colors duration-300 bg-[#09090f] text-[#e6e0ee]">
         <div className={`relative w-full max-w-md overflow-hidden rounded-2xl border p-8 shadow-2xl text-center bg-white/85 dark:bg-[#14121b]/80 border-zinc-200 dark:border-zinc-800/40 shadow-black/10`}>
           <div className="mb-8 text-center">
             <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#7C3AED]/15 text-[#7C3AED] mb-3">
@@ -142,7 +146,7 @@ export default function LandingPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@college.edu"
-                  className={`w-full rounded-lg border px-3.5 py-2.5 text-xs font-medium transition-all focus:ring-2 focus:ring-[#7C3AED]/20 focus:border-[#7C3AED] outline-none ${isDarkMode ? "border-zinc-800 bg-[#18181B] text-[#F4F4F5] placeholder:text-zinc-650" : "border-zinc-250 bg-zinc-50 text-zinc-950 placeholder:text-zinc-450"}`}
+                  className="w-full rounded-lg border px-3.5 py-2.5 text-xs font-medium transition-all focus:ring-2 focus:ring-[#7C3AED]/20 focus:border-[#7C3AED] outline-none border-zinc-800 bg-[#18181B] text-[#F4F4F5] placeholder:text-zinc-650"
                 />
               </div>
 
@@ -167,31 +171,49 @@ export default function LandingPage() {
     );
   }
 
+  const handleGetStarted = () => {
+    setIsLoginView(false);
+    const el = document.getElementById('auth');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
-    <div className={`mesh-gradient-bg min-h-screen flex flex-col font-body-md text-zinc-800 dark:text-zinc-100 ${isDarkMode ? 'dark' : ''}`}>
-      <Navbar toggleTheme={toggleTheme} />
-      <Hero
-        isLoginView={isLoginView}
-        setIsLoginView={setIsLoginView}
-        email={email}
-        setEmail={setEmail}
-        password={password}
-        setPassword={setPassword}
-        handleLogIn={handleLogIn}
-        handleGoogleLogin={handleGoogleLogin}
-        fullName={fullName}
-        setFullName={setFullName}
-        college={college}
-        setCollege={setCollege}
-        year={year}
-        setYear={setYear}
-        confirmPassword={confirmPassword}
-        setConfirmPassword={setConfirmPassword}
-        handleSignUp={handleSignUp}
-        setIsForgotPasswordView={setIsForgotPasswordView}
-        isForgotPasswordView={isForgotPasswordView}
-        authError={authError}
-      />
+    <div className="min-h-screen flex flex-col font-['Hanken_Grotesk'] text-zinc-100 bg-[#07080B] dark">
+      <Navbar onGetStarted={handleGetStarted} onContinueAsGuest={handleContinueAsGuest} />
+      <main className="flex-grow">
+        <Hero
+          isLoginView={isLoginView}
+          setIsLoginView={setIsLoginView}
+          email={email}
+          setEmail={setEmail}
+          password={password}
+          setPassword={setPassword}
+          handleLogIn={handleLogIn}
+          handleGoogleLogin={handleGoogleLogin}
+          fullName={fullName}
+          setFullName={setFullName}
+          college={college}
+          setCollege={setCollege}
+          year={year}
+          setYear={setYear}
+          confirmPassword={confirmPassword}
+          setConfirmPassword={setConfirmPassword}
+          handleSignUp={handleSignUp}
+          setIsForgotPasswordView={setIsForgotPasswordView}
+          isForgotPasswordView={isForgotPasswordView}
+          authError={authError}
+          handleContinueAsGuest={handleContinueAsGuest}
+        />
+        <SignalRouterSection />
+        <ModulesSection />
+        <HowItWorksSection />
+        <CtaBand 
+          onGetStarted={handleGetStarted} 
+          onContinueAsGuest={handleContinueAsGuest} 
+        />
+      </main>
       <Footer />
     </div>
   );

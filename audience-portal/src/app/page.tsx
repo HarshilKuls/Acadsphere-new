@@ -18,7 +18,11 @@ export default function Home() {
 
   useEffect(() => {
     if (currentUser && currentUser.onboardingCompleted) {
-      router.push("/dashboard");
+      if (currentUser.id === "guest") {
+        router.push("/dashboard-guestmode");
+      } else {
+        router.push("/dashboard");
+      }
     }
   }, [currentUser, router]);
 

@@ -17,8 +17,7 @@ Thumbs.db
 .vscode/
 .idea/
 
-# Certificates and private keys
-*.pem
-*.key
-*.p12
-*.pfx
+# Scratch and temporary files
+scratch/
+*.tmp
+original_DashboardView.txt

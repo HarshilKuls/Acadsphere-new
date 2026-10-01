@@ -25,7 +25,7 @@ export type AuthUserProfile = {
 interface AcadsphereContextType {
   // Hydration & mount
   mounted: boolean;
-  
+
   // Auth states
   currentUser: StudentUser | null;
   setCurrentUser: React.Dispatch<React.SetStateAction<StudentUser | null>>;
@@ -39,7 +39,7 @@ interface AcadsphereContextType {
   setIsForgotPasswordView: React.Dispatch<React.SetStateAction<boolean>>;
   isResetSuccess: boolean;
   setIsResetSuccess: React.Dispatch<React.SetStateAction<boolean>>;
-  
+
   fullName: string;
   setFullName: React.Dispatch<React.SetStateAction<string>>;
   college: string;
@@ -54,18 +54,7 @@ interface AcadsphereContextType {
   setConfirmPassword: React.Dispatch<React.SetStateAction<string>>;
   authError: string;
   setAuthError: React.Dispatch<React.SetStateAction<string>>;
-  
-  editFullName: string;
-  setEditFullName: React.Dispatch<React.SetStateAction<string>>;
-  editCollege: string;
-  setEditCollege: React.Dispatch<React.SetStateAction<string>>;
-  editCourse: string;
-  setEditCourse: React.Dispatch<React.SetStateAction<string>>;
-  editYear: string;
-  setEditYear: React.Dispatch<React.SetStateAction<string>>;
-  isSavingProfile: boolean;
-  setIsSavingProfile: React.Dispatch<React.SetStateAction<boolean>>;
-  
+
   authProvider: string | null;
   setAuthProvider: React.Dispatch<React.SetStateAction<string | null>>;
   isChangePasswordOpen: boolean;
@@ -80,7 +69,7 @@ interface AcadsphereContextType {
   setIsUpdatingPassword: React.Dispatch<React.SetStateAction<boolean>>;
   passwordUpdateError: string | null;
   setPasswordUpdateError: React.Dispatch<React.SetStateAction<string | null>>;
-  
+
   // Theme & sidebar
   isDarkMode: boolean;
   setIsDarkMode: React.Dispatch<React.SetStateAction<boolean>>;
@@ -91,7 +80,7 @@ interface AcadsphereContextType {
   activeTab: string;
   setActiveTab: (tabName: string) => void;
   toggleTheme: () => void;
-  
+
   // Timetable
   timetable: TimetableEntry[];
   setTimetable: React.Dispatch<React.SetStateAction<TimetableEntry[]>>;
@@ -115,7 +104,7 @@ interface AcadsphereContextType {
   setIsClearAllModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
   isClearingTimetable: boolean;
   setIsClearingTimetable: React.Dispatch<React.SetStateAction<boolean>>;
-  
+
   // Attendance
   attendance: AttendanceEntry[];
   setAttendance: React.Dispatch<React.SetStateAction<AttendanceEntry[]>>;
@@ -129,7 +118,7 @@ interface AcadsphereContextType {
   setAttAttended: React.Dispatch<React.SetStateAction<string>>;
   attTotal: string;
   setAttTotal: React.Dispatch<React.SetStateAction<string>>;
-  
+
   // CGPA
   cgpaSubjects: CGPASubject[];
   setCgpaSubjects: React.Dispatch<React.SetStateAction<CGPASubject[]>>;
@@ -143,7 +132,7 @@ interface AcadsphereContextType {
   setCgCredits: React.Dispatch<React.SetStateAction<string>>;
   cgGrade: 'O' | 'A+' | 'A' | 'B+' | 'B' | 'C' | 'F';
   setCgGrade: React.Dispatch<React.SetStateAction<'O' | 'A+' | 'A' | 'B+' | 'B' | 'C' | 'F'>>;
-  
+
   // Predictions
   predictions: MarksPrediction[];
   setPredictions: React.Dispatch<React.SetStateAction<MarksPrediction[]>>;
@@ -159,7 +148,7 @@ interface AcadsphereContextType {
   setPredExternalTotal: React.Dispatch<React.SetStateAction<string>>;
   predTargetGrade: 'O' | 'A+' | 'A' | 'B+' | 'B' | 'C';
   setPredTargetGrade: React.Dispatch<React.SetStateAction<'O' | 'A+' | 'A' | 'B+' | 'B' | 'C'>>;
-  
+
   // Calendar
   calendarEvents: CalendarEvent[];
   setCalendarEvents: React.Dispatch<React.SetStateAction<CalendarEvent[]>>;
@@ -173,7 +162,7 @@ interface AcadsphereContextType {
   setCalType: React.Dispatch<React.SetStateAction<'exam' | 'deadline' | 'reminder' | 'holiday'>>;
   currentCalendarMonth: Date;
   setCurrentCalendarMonth: React.Dispatch<React.SetStateAction<Date>>;
-  
+
   // Feedback
   feedbackHistory: FeedbackSubmission[];
   setFeedbackHistory: React.Dispatch<React.SetStateAction<FeedbackSubmission[]>>;
@@ -183,36 +172,36 @@ interface AcadsphereContextType {
   setFeedbackRating: React.Dispatch<React.SetStateAction<number>>;
   feedbackSubmitted: boolean;
   setFeedbackSubmitted: React.Dispatch<React.SetStateAction<boolean>>;
-  
+
   // Career feeds
   appliedInternships: string[];
   setAppliedInternships: React.Dispatch<React.SetStateAction<string[]>>;
   appliedEvents: string[];
   setAppliedEvents: React.Dispatch<React.SetStateAction<string[]>>;
-  
+
   librarySearch: string;
   setLibrarySearch: React.Dispatch<React.SetStateAction<string>>;
   libraryCategoryFilter: string;
   setLibraryCategoryFilter: React.Dispatch<React.SetStateAction<string>>;
-  
+
   radarFieldFilter: string;
   setRadarFieldFilter: React.Dispatch<React.SetStateAction<string>>;
   radarTypeFilter: string;
   setRadarTypeFilter: React.Dispatch<React.SetStateAction<string>>;
-  
+
   isUploadModalOpen: boolean;
   setIsUploadModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  
+
   toastMessage: string | null;
   setToastMessage: React.Dispatch<React.SetStateAction<string | null>>;
-  
+
   eventsFeed: HackathonEvent[];
   setEventsFeed: React.Dispatch<React.SetStateAction<HackathonEvent[]>>;
   internshipsFeed: InternshipListing[];
   setInternshipsFeed: React.Dispatch<React.SetStateAction<InternshipListing[]>>;
   libraryFeed: LibraryItem[];
   setLibraryFeed: React.Dispatch<React.SetStateAction<LibraryItem[]>>;
-  
+
   // Actions & Mutations
   triggerToast: (msg: string) => void;
   handleSignUp: (e: React.FormEvent) => Promise<void>;
@@ -223,9 +212,8 @@ interface AcadsphereContextType {
   handleSignOut: () => Promise<void>;
   handleOnboardingComplete: (college: string, course: string, year: string) => Promise<boolean>;
   handleOnboardingSkip: () => Promise<boolean>;
-  handleSaveProfile: (e: React.FormEvent) => Promise<void>;
-  handlePasswordChange: (e: React.FormEvent) => Promise<void>;
-  
+    handlePasswordChange: (e: React.FormEvent) => Promise<void>;
+
   // Timetable Handlers
   handleAddTimetable: (e: React.FormEvent) => void;
   handleEditTimetable: (entry: TimetableEntry) => void;
@@ -233,39 +221,39 @@ interface AcadsphereContextType {
   handleClearAllTimetable: () => Promise<void>;
   handleImportExtracted: (entries: { subject: string; faculty: string; room: string; day: string; startTime: string; endTime: string }[]) => void;
   cancelTimetableEdit: () => void;
-  
+
   // Attendance Handlers
   handleAddAttendance: (e: React.FormEvent) => void;
   handleEditAttendance: (entry: AttendanceEntry) => void;
   handleIncrementAttendance: (id: string, isAttended: boolean) => void;
   handleDeleteAttendance: (id: string) => void;
   cancelAttendanceEdit: () => void;
-  
+
   // CGPA Handlers
   handleAddCGPASubject: (e: React.FormEvent) => void;
   handleEditCGPASubject: (subject: CGPASubject) => void;
   handleDeleteCGPASubject: (id: string) => void;
   cancelCGPAEdit: () => void;
-  
+
   // Prediction Handlers
   handleAddPrediction: (e: React.FormEvent) => void;
   handleEditPrediction: (prediction: MarksPrediction) => void;
   handleDeletePrediction: (id: string) => void;
   cancelPredictionEdit: () => void;
-  
+
   // Calendar Handlers
   handleAddCalendarEvent: (e: React.FormEvent) => void;
   handleEditCalendarEvent: (event: CalendarEvent) => void;
   handleDeleteCalendarEvent: (id: string) => void;
   cancelCalendarEdit: () => void;
-  
+
   // Feedback
   handleSubmitFeedback: (e: React.FormEvent) => void;
-  
+
   // Career feeds
   applyForInternship: (id: string, company: string, role: string, applyLink?: string) => void;
   applyForEvent: (id: string, title: string, applyLink?: string) => void;
-  
+
   // Computed values
   todaysClasses: TimetableEntry[];
   healthData: { score: number; status: 'Safe' | 'Warning' | 'Critical'; insights: { text: string; type: 'safe' | 'warning' | 'critical' }[] };
@@ -281,21 +269,30 @@ interface AcadsphereContextType {
   totalClasses: number;
   timeToMinutes: (time: string) => number;
   getExternalRequirement: (prediction: MarksPrediction) => { targetBoundary: number; internalContrib: number; neededExternalContrib: number; rawExternalNeeded: number; alreadySecured: boolean; feasible: boolean };
-  
+
   // Filtered lists
   filteredLibrary: LibraryItem[];
   filteredEvents: HackathonEvent[];
   filteredInternships: InternshipListing[];
-  
+
   // Calendar Helpers
   getDaysInMonth: (date: Date) => Date[];
   calendarDays: Date[];
   startDayOffset: number;
-  
+
   // Additional Exposes
   gradePoints: Record<string, number>;
   gradeThresholds: Record<string, number>;
   currentClass: TimetableEntry | undefined;
+  // Guest Mode
+  isGuest: boolean;
+  setIsGuest: React.Dispatch<React.SetStateAction<boolean>>;
+  showGuestAuthModal: boolean;
+  setShowGuestAuthModal: React.Dispatch<React.SetStateAction<boolean>>;
+  guestAuthMessage: string;
+  setGuestAuthMessage: React.Dispatch<React.SetStateAction<string>>;
+  handleContinueAsGuest: () => void;
+  requireAuth: (message?: string) => boolean;
 }
 
 const AcadsphereContext = createContext<AcadsphereContextType | undefined>(undefined);
@@ -310,10 +307,11 @@ export function AcadsphereProvider({ children }: { children: React.ReactNode }) 
     "Timetable / Schedule": "/timetable",
     "Attendance": "/attendance",
     "CGPA Calculator": "/cgpa",
-    "Marks Predictor": "/marks-predictor",
+    "Marks Predictor": "/marks",
     "Calendar": "/calendar",
     "Events / Network": "/events",
     "Internship": "/internship",
+    "Blogs": "/blogs",
     "E-Library": "/e-library",
     "Feedback": "/feedback",
     "Settings": "/settings",
@@ -324,19 +322,27 @@ export function AcadsphereProvider({ children }: { children: React.ReactNode }) 
     Object.entries(tabToRouteMap).map(([k, v]) => [v, k])
   );
 
-  const activeTab = routeToTabMap[pathname] || "Dashboard";
+  const activeTab = pathname === "/dashboard-guestmode" ? "Dashboard" : (routeToTabMap[pathname] || "Dashboard");
   const setActiveTab = (tabName: string) => {
     const route = tabToRouteMap[tabName];
     if (route) {
-      router.push(route);
+      if (isGuest && route === "/dashboard") {
+        router.push("/dashboard-guestmode");
+      } else {
+        router.push(route);
+      }
     }
   };
 
-    // --- Hydration & Mounted State ---
+  // --- Hydration & Mounted State ---
   const [mounted, setMounted] = useState(false);
 
   // --- Auth States ---
   const [currentUser, setCurrentUser] = useState<StudentUser | null>(null);
+  const [isGuest, setIsGuest] = useState(false);
+  const [showGuestAuthModal, setShowGuestAuthModal] = useState(false);
+  const [guestAuthMessage, setGuestAuthMessage] = useState("Sign in to continue.");
+
   const [isLoginView, setIsLoginView] = useState(true);
   const [isVerificationPending, setIsVerificationPending] = useState(false);
   const [isBannedView, setIsBannedView] = useState(false);
@@ -353,12 +359,7 @@ export function AcadsphereProvider({ children }: { children: React.ReactNode }) 
   const [authError, setAuthError] = useState("");
 
   // Edit Profile States
-  const [editFullName, setEditFullName] = useState("");
-  const [editCollege, setEditCollege] = useState("");
-  const [editCourse, setEditCourse] = useState("");
-  const [editYear, setEditYear] = useState("I Year");
-  const [isSavingProfile, setIsSavingProfile] = useState(false);
-
+          
   // Auth provider check (to hide Change Password for Google users)
   const [authProvider, setAuthProvider] = useState<string | null>(null);
 
@@ -374,7 +375,7 @@ export function AcadsphereProvider({ children }: { children: React.ReactNode }) 
   const [isDarkMode, setIsDarkMode] = useState(true);
 
   // --- UI Layout States ---
-//   const [activeTab, setActiveTab] = useState<string>("Dashboard");
+  //   const [activeTab, setActiveTab] = useState<string>("Dashboard");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
@@ -465,7 +466,7 @@ export function AcadsphereProvider({ children }: { children: React.ReactNode }) 
   const [internshipsFeed, setInternshipsFeed] = useState<InternshipListing[]>([]);
   const [libraryFeed, setLibraryFeed] = useState<LibraryItem[]>([]);
 
-    // Trigger brief alert toast
+  // Trigger brief alert toast
   const triggerToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
@@ -616,6 +617,7 @@ export function AcadsphereProvider({ children }: { children: React.ReactNode }) 
           setAuthError("This account is an Administrator. Please log in through the Admin Portal.");
           setCurrentUser(null);
           localStorage.removeItem("acadsphere_session");
+          document.cookie = "acadsphere_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
           await supabase.auth.signOut();
           return;
         }
@@ -639,7 +641,21 @@ export function AcadsphereProvider({ children }: { children: React.ReactNode }) 
         const studentUser = await getOrCreateProfile(session.user);
         if (studentUser) {
           localStorage.setItem("acadsphere_session", JSON.stringify(studentUser));
+          document.cookie = "acadsphere_session=true; path=/; max-age=604800"; // 7 days
           setCurrentUser(studentUser);
+        }
+      } else {
+        // Check if there is an active guest session
+        if (sessionStorage.getItem("acadsphere_guest") === "true") {
+          setIsGuest(true);
+          setCurrentUser({
+            id: "guest",
+            fullName: "Guest Visitor",
+            college: "Acadsphere",
+            year: "Visitor",
+            email: "guest@acadsphere.app",
+            onboardingCompleted: true,
+          });
         }
       }
     };
@@ -666,6 +682,7 @@ export function AcadsphereProvider({ children }: { children: React.ReactNode }) 
           setCurrentUser(null);
           setAuthProvider(null);
           localStorage.removeItem("acadsphere_session");
+          document.cookie = "acadsphere_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
           await supabase.auth.signOut();
           return;
         }
@@ -687,6 +704,7 @@ export function AcadsphereProvider({ children }: { children: React.ReactNode }) 
         const studentUser = await getOrCreateProfile(session.user);
         if (studentUser) {
           localStorage.setItem("acadsphere_session", JSON.stringify(studentUser));
+          document.cookie = "acadsphere_session=true; path=/; max-age=604800";
           setCurrentUser(studentUser);
           setIsVerificationPending(false);
           setIsBannedView(false);
@@ -695,6 +713,7 @@ export function AcadsphereProvider({ children }: { children: React.ReactNode }) 
         setCurrentUser(null);
         setAuthProvider(null);
         localStorage.removeItem("acadsphere_session");
+        document.cookie = "acadsphere_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
       }
     });
 
@@ -703,23 +722,10 @@ export function AcadsphereProvider({ children }: { children: React.ReactNode }) 
     };
   }, []);
 
-  // Synchronize profile inputs with logged-in user profile
-  useEffect(() => {
-    if (currentUser) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setEditFullName(currentUser.fullName || "");
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setEditCollege(currentUser.college || "");
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setEditCourse(currentUser.course || "");
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setEditYear(currentUser.year || "I Year");
-    }
-  }, [currentUser]);
-
+  
   // Fetch student specific records whenever user logs in or switches tabs
   useEffect(() => {
-    if (!currentUser || !currentUser.onboardingCompleted) return;
+    if (!currentUser || !currentUser.onboardingCompleted || isGuest) return;
     const userId = currentUser.id;
 
     // Set immediate cached local layout first for instant UI response
@@ -744,6 +750,25 @@ export function AcadsphereProvider({ children }: { children: React.ReactNode }) 
       });
     });
 
+    const refreshCalendar = async () => {
+      await db.syncUserData(userId);
+      setCalendarEvents(db.getCalendarEvents(userId));
+    };
+    const calendarChannel = supabase
+      .channel(`dashboard-calendar-${userId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "holidays" }, refreshCalendar)
+      .on("postgres_changes", { event: "*", schema: "public", table: "calendar", filter: `user_id=eq.${userId}` }, refreshCalendar)
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(calendarChannel);
+    };
+  }, [currentUser, activeTab, isGuest]);
+
+  // Fetch shared ecosystem content (Events, Internships, Library) for ALL users, including guests
+  useEffect(() => {
+    if (!currentUser) return; // Wait until some user context (even guest) exists
+
     const loadSharedContent = async () => {
       const [events, internships, library] = await Promise.all([
         db.getEvents(),
@@ -763,19 +788,8 @@ export function AcadsphereProvider({ children }: { children: React.ReactNode }) 
       .on("postgres_changes", { event: "*", schema: "public", table: "e_library" }, loadSharedContent)
       .subscribe();
 
-    const refreshCalendar = async () => {
-      await db.syncUserData(userId);
-      setCalendarEvents(db.getCalendarEvents(userId));
-    };
-    const calendarChannel = supabase
-      .channel(`dashboard-calendar-${userId}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "holidays" }, refreshCalendar)
-      .on("postgres_changes", { event: "*", schema: "public", table: "calendar", filter: `user_id=eq.${userId}` }, refreshCalendar)
-      .subscribe();
-
     return () => {
       supabase.removeChannel(sharedContentChannel);
-      supabase.removeChannel(calendarChannel);
     };
   }, [currentUser, activeTab]);
 
@@ -792,7 +806,7 @@ export function AcadsphereProvider({ children }: { children: React.ReactNode }) 
     triggerToast(`Theme switched to ${nextDark ? "Dark" : "Light"} mode`);
   };
 
-    const handleSignUp = async (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError("");
 
@@ -879,6 +893,7 @@ export function AcadsphereProvider({ children }: { children: React.ReactNode }) 
             onboardingCompleted: false
           };
           localStorage.setItem("acadsphere_session", JSON.stringify(studentUser));
+          document.cookie = "acadsphere_session=true; path=/; max-age=604800";
           setCurrentUser(studentUser);
           triggerToast("Account created and logged in!");
         }
@@ -908,6 +923,32 @@ export function AcadsphereProvider({ children }: { children: React.ReactNode }) 
       setAuthError("An unexpected error occurred during Google authentication.");
       console.error("Google auth exception:", error);
     }
+  };
+
+  const handleContinueAsGuest = () => {
+    setIsGuest(true);
+    const guestUser: StudentUser = {
+      id: "guest",
+      fullName: "Guest Visitor",
+      college: "Acadsphere",
+      year: "Visitor",
+      email: "guest@acadsphere.app",
+      onboardingCompleted: true,
+    };
+    setCurrentUser(guestUser);
+    sessionStorage.setItem("acadsphere_guest", "true");
+    
+    // Analytics tracking for Guest Mode
+    db.recordUnauthenticatedCheck("guest_mode").catch(() => {});
+  };
+
+  const requireAuth = (message: string = "Sign in to continue."): boolean => {
+    if (isGuest) {
+      setGuestAuthMessage(message);
+      setShowGuestAuthModal(true);
+      return false;
+    }
+    return true;
   };
 
   const handleLogIn = async (e: React.FormEvent) => {
@@ -963,6 +1004,7 @@ export function AcadsphereProvider({ children }: { children: React.ReactNode }) 
         const studentSession = await getOrCreateProfile(data.user);
         if (studentSession) {
           localStorage.setItem("acadsphere_session", JSON.stringify(studentSession));
+          document.cookie = "acadsphere_session=true; path=/; max-age=604800";
           setCurrentUser(studentSession);
           setIsBannedView(false);
           setIsVerificationPending(false);
@@ -1034,8 +1076,14 @@ export function AcadsphereProvider({ children }: { children: React.ReactNode }) 
 
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    localStorage.removeItem("acadsphere_session");
+    if (isGuest) {
+      setIsGuest(false);
+      sessionStorage.removeItem("acadsphere_guest");
+    } else {
+      await supabase.auth.signOut();
+      localStorage.removeItem("acadsphere_session");
+      document.cookie = "acadsphere_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    }
     setCurrentUser(null);
     setActiveTab("Dashboard");
     setIsVerificationPending(false);
@@ -1076,49 +1124,10 @@ export function AcadsphereProvider({ children }: { children: React.ReactNode }) 
     return success;
   };
 
-  const handleSaveProfile = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!currentUser) return;
-    if (!editFullName.trim() || !editCollege.trim()) {
-      triggerToast("Full Name and College/Institution are required.");
-      return;
-    }
-    setIsSavingProfile(true);
-    try {
-      const { error } = await supabase
-        .from('users').update({
-          full_name: editFullName,
-          college: editCollege,
-          course: editCourse,
-          year: editYear,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', currentUser.id);
-
-      if (error) {
-        throw error;
-      }
-
-      const updatedUser: StudentUser = {
-        ...currentUser,
-        fullName: editFullName,
-        college: editCollege,
-        course: editCourse,
-        year: editYear
-      };
-
-      setCurrentUser(updatedUser);
-      localStorage.setItem("acadsphere_session", JSON.stringify(updatedUser));
-      triggerToast("Profile settings updated successfully!");
-    } catch (err: unknown) {
-      triggerToast((err as Error)?.message || "Failed to update profile settings.");
-    } finally {
-      setIsSavingProfile(false);
-    }
-  };
-
+  
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!requireAuth("Sign in to manage your account settings.")) return;
     if (!currentUser) return;
     setPasswordUpdateError(null);
 
@@ -1189,7 +1198,7 @@ export function AcadsphereProvider({ children }: { children: React.ReactNode }) 
 
   // ----------------------------------------------------
 
-    // ----------------------------------------------------
+  // ----------------------------------------------------
   // COMPUTED VARIABLES FOR THE STUDENT
   // ----------------------------------------------------
   const parseWholeNumber = (value: string): number => Number.parseInt(value, 10);
@@ -1345,7 +1354,7 @@ export function AcadsphereProvider({ children }: { children: React.ReactNode }) 
   const nextClass = getNextClass();
 
 
-    // MODULE ACTIONS
+  // MODULE ACTIONS
   // ----------------------------------------------------
 
   // Timetable Save
@@ -1405,6 +1414,9 @@ export function AcadsphereProvider({ children }: { children: React.ReactNode }) 
     setTtStart("09:00");
     setTtEnd("10:00");
     triggerToast(ttEditingId ? "Lecture block updated." : "Timetable entry logged!");
+
+    // Prompt guest
+    requireAuth("Sign in to securely save this timetable to your profile.");
   };
 
   const handleEditTimetable = (entry: TimetableEntry) => {
@@ -1440,6 +1452,7 @@ export function AcadsphereProvider({ children }: { children: React.ReactNode }) 
       setTtRoom("");
     }
     triggerToast("Class schedule removed.");
+    requireAuth("Sign in to sync these changes to your account.");
   };
 
   const handleClearAllTimetable = async () => {
@@ -1454,6 +1467,7 @@ export function AcadsphereProvider({ children }: { children: React.ReactNode }) 
       setTtRoom("");
       setIsClearAllModalOpen(false);
       triggerToast("Weekly lecture timetable cleared successfully.");
+      requireAuth("Sign in to save these changes permanently.");
     } catch (err: unknown) {
       triggerToast("Failed to clear timetable.");
     } finally {
@@ -1488,6 +1502,7 @@ export function AcadsphereProvider({ children }: { children: React.ReactNode }) 
     setTimetable(prev => [...prev, ...newEntries]);
     setIsUploadModalOpen(false);
     triggerToast(`Imported ${newEntries.length} timetable entries!`);
+    requireAuth("Sign in to securely save this timetable to your profile.");
   };
 
   // Attendance CRUD
@@ -1563,6 +1578,7 @@ export function AcadsphereProvider({ children }: { children: React.ReactNode }) 
     db.saveAttendance(updated);
     setAttendance(attendance.map(a => a.id === id ? updated : a));
     triggerToast(isAttended ? "+1 Attended Class" : "+1 Missed Class");
+    requireAuth("Sign in to securely track your attendance progress.");
   };
 
   const handleDeleteAttendance = (id: string) => {
@@ -1575,6 +1591,7 @@ export function AcadsphereProvider({ children }: { children: React.ReactNode }) 
       setAttTotal("0");
     }
     triggerToast("Course deleted from log.");
+    requireAuth("Sign in to sync these changes to your account.");
   };
 
   // CGPA Subject Save
@@ -1616,6 +1633,7 @@ export function AcadsphereProvider({ children }: { children: React.ReactNode }) 
     setCgCredits("3");
     setCgGrade("A+");
     triggerToast(cgEditingId ? "Course grade updated." : "Course grade logged!");
+    requireAuth("Sign in to securely save your CGPA record.");
   };
 
   const handleEditCGPASubject = (subject: CGPASubject) => {
@@ -1644,6 +1662,7 @@ export function AcadsphereProvider({ children }: { children: React.ReactNode }) 
       setCgGrade("A+");
     }
     triggerToast("Course removed from CGPA ledger.");
+    requireAuth("Sign in to sync these changes to your account.");
   };
 
   // Marks Predictor Save
@@ -1689,6 +1708,7 @@ export function AcadsphereProvider({ children }: { children: React.ReactNode }) 
     setPredExternalTotal("100");
     setPredTargetGrade("A+");
     triggerToast(predEditingId ? "Prediction updated." : "Predictor registered!");
+    requireAuth("Sign in to securely save your Marks Predictor goals.");
   };
 
   const handleEditPrediction = (prediction: MarksPrediction) => {
@@ -1721,6 +1741,7 @@ export function AcadsphereProvider({ children }: { children: React.ReactNode }) 
       setPredExternalTotal("100");
     }
     triggerToast("Target prediction cleared.");
+    requireAuth("Sign in to sync these changes to your account.");
   };
 
   // Calendar Event Save
@@ -1750,6 +1771,7 @@ export function AcadsphereProvider({ children }: { children: React.ReactNode }) 
     setCalDate("");
     setCalType("deadline");
     triggerToast(calEditingId ? "Calendar event updated." : "Academic event added to schedule.");
+    requireAuth("Sign in to securely save your Calendar entries.");
   };
 
   const handleEditCalendarEvent = (event: CalendarEvent) => {
@@ -1777,6 +1799,7 @@ export function AcadsphereProvider({ children }: { children: React.ReactNode }) 
       setCalType("deadline");
     }
     triggerToast("Event deleted.");
+    requireAuth("Sign in to sync these changes to your account.");
   };
 
   // Star Feedback Save
@@ -1802,6 +1825,7 @@ export function AcadsphereProvider({ children }: { children: React.ReactNode }) 
 
   // Apply trigger functions
   const applyForInternship = (id: string, company: string, role: string, applyLink?: string) => {
+    if (!requireAuth("Sign in to apply for internships.")) return;
     if (!appliedInternships.includes(id)) {
       setAppliedInternships([...appliedInternships, id]);
       triggerToast(`Application submitted to ${company} for ${role}!`);
@@ -1812,6 +1836,7 @@ export function AcadsphereProvider({ children }: { children: React.ReactNode }) 
   };
 
   const applyForEvent = (id: string, title: string, applyLink?: string) => {
+    if (!requireAuth("Sign in to register for events.")) return;
     if (!appliedEvents.includes(id)) {
       setAppliedEvents([...appliedEvents, id]);
       triggerToast(`Registered successfully for ${title}!`);
@@ -1885,6 +1910,10 @@ export function AcadsphereProvider({ children }: { children: React.ReactNode }) 
   return (
     <AcadsphereContext.Provider value={{
       mounted,
+      isGuest, setIsGuest,
+      showGuestAuthModal, setShowGuestAuthModal,
+      guestAuthMessage, setGuestAuthMessage,
+      handleContinueAsGuest, requireAuth,
       currentUser, setCurrentUser,
       isLoginView, setIsLoginView,
       isVerificationPending, setIsVerificationPending,
@@ -1898,11 +1927,6 @@ export function AcadsphereProvider({ children }: { children: React.ReactNode }) 
       password, setPassword,
       confirmPassword, setConfirmPassword,
       authError, setAuthError,
-      editFullName, setEditFullName,
-      editCollege, setEditCollege,
-      editCourse, setEditCourse,
-      editYear, setEditYear,
-      isSavingProfile, setIsSavingProfile,
       authProvider, setAuthProvider,
       isChangePasswordOpen, setIsChangePasswordOpen,
       changeCurrentPassword, setChangeCurrentPassword,
@@ -1975,7 +1999,6 @@ export function AcadsphereProvider({ children }: { children: React.ReactNode }) 
       handleSignOut,
       handleOnboardingComplete,
       handleOnboardingSkip,
-      handleSaveProfile,
       handlePasswordChange,
       handleAddTimetable,
       handleEditTimetable,

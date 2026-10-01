@@ -44,6 +44,7 @@ export interface EventEntry {
   image?: string;
   tags?: string;
   category: 'Competition/Event' | 'News/Announcement';
+  deadlineDate?: string;
 }
 
 export interface InternshipEntry {
@@ -56,6 +57,7 @@ export interface InternshipEntry {
   qualification?: string;
   location?: string;
   description?: string;
+  deadlineDate?: string;
 }
 
 export interface LibraryResource {
@@ -105,18 +107,44 @@ export interface FeedbackEntry {
   createdAt: string;
 }
 
+export interface BlogEntry {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt?: string;
+  content: string;
+  content_type: 'text' | 'html';
+  cover_image?: string;
+  status: 'draft' | 'published';
+  author_id?: string;
+  created_at?: string;
+  updated_at?: string;
+  published_at?: string;
+  is_always_running?: boolean;
+  expiry_date?: string;
+}
+
+export interface UnauthenticatedCheck {
+  id: string;
+  feature: string;
+  blog_slug?: string;
+  created_at: string;
+}
+
 const mapEvent = (item: Record<string, unknown>): EventEntry => ({
   id: String(item.id), title: String(item.title ?? ""), description: item.description ? String(item.description) : undefined,
   organizer: item.organizer ? String(item.organizer) : undefined, date: item.date ? String(item.date) : undefined,
   location: item.location ? String(item.location) : undefined, applyLink: item.apply_link ? String(item.apply_link) : undefined,
   image: item.image ? String(item.image) : undefined, tags: item.tags ? String(item.tags) : undefined,
-  category: item.category === "News/Announcement" ? "News/Announcement" : "Competition/Event"
+  category: item.category === "News/Announcement" ? "News/Announcement" : "Competition/Event",
+  deadlineDate: item.deadline_date ? String(item.deadline_date) : undefined
 });
 const mapInternship = (item: Record<string, unknown>): InternshipEntry => ({
   id: String(item.id), title: String(item.title ?? ""), companyName: item.company_name ? String(item.company_name) : undefined,
   applyLink: item.apply_link ? String(item.apply_link) : undefined, duration: item.duration ? String(item.duration) : undefined,
   stipend: item.stipend ? String(item.stipend) : undefined, qualification: item.qualification ? String(item.qualification) : undefined,
-  location: item.location ? String(item.location) : undefined, description: item.description ? String(item.description) : undefined
+  location: item.location ? String(item.location) : undefined, description: item.description ? String(item.description) : undefined,
+  deadlineDate: item.deadline_date ? String(item.deadline_date) : undefined
 });
 const mapLibrary = (item: Record<string, unknown>): LibraryResource => ({
   id: String(item.id), title: String(item.title ?? ""), category: item.category as LibraryResource["category"],
@@ -126,6 +154,15 @@ const mapLibrary = (item: Record<string, unknown>): LibraryResource => ({
 const mapHoliday = (item: Record<string, unknown>): HolidayEntry => ({
   id: String(item.id), title: String(item.title ?? ""), description: item.description ? String(item.description) : undefined,
   date: String(item.date ?? ""), type: item.type as HolidayEntry["type"], color: item.color as HolidayEntry["color"]
+});
+const mapBlog = (item: Record<string, unknown>): BlogEntry => ({
+  id: String(item.id), title: String(item.title ?? ""), slug: String(item.slug ?? ""),
+  excerpt: item.excerpt ? String(item.excerpt) : undefined, content: String(item.content ?? ""),
+  content_type: item.content_type as BlogEntry["content_type"], cover_image: item.cover_image ? String(item.cover_image) : undefined,
+  status: item.status as BlogEntry["status"], author_id: item.author_id ? String(item.author_id) : undefined,
+  created_at: item.created_at ? String(item.created_at) : undefined, updated_at: item.updated_at ? String(item.updated_at) : undefined,
+  published_at: item.published_at ? String(item.published_at) : undefined,
+  is_always_running: item.is_always_running as boolean | undefined, expiry_date: item.expiry_date ? String(item.expiry_date) : undefined
 });
 
 const getStorageItem = <T>(key: string, defaultValue: T): T => {
@@ -160,6 +197,20 @@ const buildBootstrapAdmin = (email: string): AdminAccount => ({
 });
 
 export const adminDb = {
+  getUnauthenticatedChecks: async (): Promise<UnauthenticatedCheck[]> => {
+    try {
+      const { data, error } = await supabase.from('unauthenticated_checks').select('*').order('created_at', { ascending: false });
+      if (error) {
+        console.error("Supabase SELECT failed for unauthenticated_checks:", error.message, error.details, error.hint);
+        return [];
+      }
+      return data || [];
+    } catch (e) {
+      console.error("Failed fetching unauth checks from Supabase due to an exception:", e);
+      return [];
+    }
+  },
+
   getCurrentAdmin: async (emailHint?: string): Promise<AdminAccount | null> => {
     const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
     const resolvedEmail = (emailHint || sessionData.session?.user?.email || "").toLowerCase();
@@ -280,7 +331,8 @@ export const adminDb = {
     const payload = {
       ...(entry.id ? { id: entry.id } : {}), title: entry.title, description: entry.description ?? null,
       organizer: entry.organizer ?? null, date: entry.date ?? null, location: entry.location ?? null,
-      apply_link: entry.applyLink ?? null, image: entry.image ?? null, tags: entry.tags ?? null, category: entry.category
+      apply_link: entry.applyLink ?? null, image: entry.image ?? null, tags: entry.tags ?? null, category: entry.category,
+      deadline_date: entry.deadlineDate ?? null
     };
     const { data, error } = await supabase.from('events').upsert(payload).select().single();
     if (error) throw error;
@@ -303,7 +355,8 @@ export const adminDb = {
     const { data, error } = await supabase.from('internships').upsert({
       ...(entry.id ? { id: entry.id } : {}), title: entry.title, company_name: entry.companyName ?? null,
       apply_link: entry.applyLink ?? null, duration: entry.duration ?? null, stipend: entry.stipend ?? null,
-      qualification: entry.qualification ?? null, location: entry.location ?? null, description: entry.description ?? null
+      qualification: entry.qualification ?? null, location: entry.location ?? null, description: entry.description ?? null,
+      deadline_date: entry.deadlineDate ?? null
     }).select().single();
     if (error) throw error;
     return mapInternship(data);
@@ -439,6 +492,38 @@ export const adminDb = {
 
   deleteHoliday: async (id: string): Promise<void> => {
     const { error } = await supabase.from('holidays').delete().eq('id', id);
+    if (error) throw error;
+  },
+
+  // --- Blogs CRUD ---
+  getBlogs: async (): Promise<BlogEntry[]> => {
+    const { data, error } = await supabase.from('blogs').select('*').order('created_at', { ascending: false });
+    if (error) throw error;
+    return (data ?? []).map(mapBlog);
+  },
+
+  saveBlog: async (entry: Omit<BlogEntry, 'id'> & { id?: string }): Promise<BlogEntry> => {
+    const payload = {
+      ...(entry.id ? { id: entry.id } : {}),
+      title: entry.title,
+      slug: entry.slug,
+      excerpt: entry.excerpt ?? null,
+      content: entry.content,
+      content_type: entry.content_type,
+      cover_image: entry.cover_image ?? null,
+      status: entry.status,
+      author_id: entry.author_id ?? null,
+      published_at: entry.status === 'published' && !entry.published_at ? new Date().toISOString() : entry.published_at ?? null,
+      is_always_running: entry.is_always_running ?? true,
+      expiry_date: entry.expiry_date ?? null
+    };
+    const { data, error } = await supabase.from('blogs').upsert(payload).select().single();
+    if (error) throw error;
+    return mapBlog(data);
+  },
+
+  deleteBlog: async (id: string): Promise<void> => {
+    const { error } = await supabase.from('blogs').delete().eq('id', id);
     if (error) throw error;
   }
 };

@@ -162,3 +162,13 @@ button, a, .tab, .dropdown-item, .menu-item, [role='tab'], [role='button'] { tra
   display: none !important;
 }
 
+/* Fix for Date Picker Icon in Dark Mode */
+.dark input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  opacity: 0.7;
+  cursor: pointer;
+}
+.dark input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+

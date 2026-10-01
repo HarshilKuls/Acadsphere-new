@@ -16,42 +16,42 @@ export interface MilestoneBadge {
   icon: LucideIcon;
 }
 
-const rarityStyles: Record<BadgeRarity, { 
-  dot: string; text: string; badge: string; 
+const rarityStyles: Record<BadgeRarity, {
+  dot: string; text: string; badge: string;
   cardEarned: string;
   glowEl: string;
   iconEarned: string;
   footerEarned: string;
 }> = {
-  Common: { 
+  Common: {
     dot: "bg-slate-400", text: "text-slate-400", badge: "bg-slate-400/10",
     cardEarned: "border-slate-500/40 bg-[linear-gradient(135deg,rgba(148,163,184,0.1),transparent_72%)] hover:border-slate-400 hover:shadow-[0_10px_24px_rgba(148,163,184,0.2)]",
     glowEl: "bg-slate-400/20",
     iconEarned: "border-slate-400/40 bg-slate-500 text-white shadow-[0_5px_14px_rgba(148,163,184,0.3)]",
     footerEarned: "border-slate-500/20 text-slate-400",
   },
-  Uncommon: { 
+  Uncommon: {
     dot: "bg-emerald-400", text: "text-emerald-500", badge: "bg-emerald-500/10",
     cardEarned: "border-emerald-500/40 bg-[linear-gradient(135deg,rgba(16,185,129,0.1),transparent_72%)] hover:border-emerald-400 hover:shadow-[0_10px_24px_rgba(16,185,129,0.2)]",
     glowEl: "bg-emerald-500/20",
     iconEarned: "border-emerald-400/40 bg-emerald-500 text-white shadow-[0_5px_14px_rgba(16,185,129,0.3)]",
     footerEarned: "border-emerald-500/20 text-emerald-500",
   },
-  Rare: { 
+  Rare: {
     dot: "bg-sky-400", text: "text-sky-500", badge: "bg-sky-500/10",
     cardEarned: "border-sky-500/40 bg-[linear-gradient(135deg,rgba(14,165,233,0.1),transparent_72%)] hover:border-sky-400 hover:shadow-[0_10px_24px_rgba(14,165,233,0.2)]",
     glowEl: "bg-sky-500/20",
     iconEarned: "border-sky-400/40 bg-sky-500 text-white shadow-[0_5px_14px_rgba(14,165,233,0.3)]",
     footerEarned: "border-sky-500/20 text-sky-500",
   },
-  Epic: { 
+  Epic: {
     dot: "bg-violet-400", text: "text-violet-400", badge: "bg-violet-500/10",
     cardEarned: "border-violet-500/40 bg-[linear-gradient(135deg,rgba(139,92,246,0.1),transparent_72%)] hover:border-violet-400 hover:shadow-[0_10px_24px_rgba(139,92,246,0.2)]",
     glowEl: "bg-violet-500/20",
     iconEarned: "border-violet-400/40 bg-violet-500 text-white shadow-[0_5px_14px_rgba(139,92,246,0.3)]",
     footerEarned: "border-violet-500/20 text-violet-400",
   },
-  Legendary: { 
+  Legendary: {
     dot: "bg-amber-400", text: "text-amber-500", badge: "bg-amber-500/10",
     cardEarned: "border-amber-500/40 bg-[linear-gradient(135deg,rgba(245,158,11,0.1),transparent_72%)] hover:border-amber-400 hover:shadow-[0_10px_24px_rgba(245,158,11,0.2)]",
     glowEl: "bg-amber-500/20",
@@ -66,11 +66,10 @@ function BadgeCard({ badge }: { badge: MilestoneBadge }) {
 
   return (
     <article
-      className={`group relative overflow-hidden rounded-xl border p-4 transition-all duration-300 motion-reduce:transition-none ${
-        badge.earned
+      className={`group relative overflow-hidden rounded-xl border p-4 transition-all duration-300 motion-reduce:transition-none ${badge.earned
           ? `${rarity.cardEarned} hover:-translate-y-1`
           : "border-[var(--outline-dim)] bg-[var(--surface-low)]/70 opacity-70 hover:border-[var(--outline)] hover:opacity-90"
-      }`}
+        }`}
     >
       {badge.earned && <div className={`absolute -right-7 -top-7 h-20 w-20 rounded-full blur-xl transition-transform duration-500 group-hover:scale-150 ${rarity.glowEl}`} />}
       <div className="relative flex items-start gap-3">
@@ -94,7 +93,7 @@ function BadgeCard({ badge }: { badge: MilestoneBadge }) {
   );
 }
 
-export default function MilestoneBadges({ badges }: { badges: MilestoneBadge[] }) {
+export default function MilestoneBadges({ badges, isGuest }: { badges: MilestoneBadge[], isGuest?: boolean }) {
   const earned = badges.filter((badge) => badge.earned).length;
   const [showAll, setShowAll] = useState(false);
   const sortedBadges = [...badges].sort((a, b) => {
@@ -105,7 +104,13 @@ export default function MilestoneBadges({ badges }: { badges: MilestoneBadge[] }
   const displayedBadges = showAll ? sortedBadges : sortedBadges.slice(0, 6);
 
   return (
-    <section className="mt-4 rounded-xl border border-[var(--outline-dim)] bg-[var(--surface-low)] p-4 sm:p-5" aria-labelledby="milestone-badges-heading">
+    <section className="mt-4 rounded-xl border border-[var(--outline-dim)] bg-[var(--surface-low)] p-4 sm:p-5 relative overflow-hidden" aria-labelledby="milestone-badges-heading">
+      {isGuest && (
+        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-zinc-950/40 backdrop-blur-[2px]">
+          <span className="text-2xl mb-1">🔒</span>
+          <span className="text-[10px] font-bold text-white uppercase tracking-wider text-center">Sign in to access</span>
+        </div>
+      )}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--accent)]/35 bg-[var(--accent-20)] text-[var(--accent-hover)]">

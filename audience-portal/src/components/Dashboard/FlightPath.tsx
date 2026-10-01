@@ -5,11 +5,18 @@ import { MapPin } from "lucide-react";
 interface FlightPathProps {
   todaysClasses: TimetableEntry[];
   currentDayName: string;
+  isGuest?: boolean;
 }
 
-export default function FlightPath({ todaysClasses, currentDayName }: FlightPathProps) {
+export default function FlightPath({ todaysClasses, currentDayName, isGuest }: FlightPathProps) {
   return (
-    <div className="lg:col-span-8 glass-card p-4 sm:p-6">
+    <div className="lg:col-span-8 glass-card p-4 sm:p-6 relative overflow-hidden">
+      {isGuest && (
+        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-zinc-950/40 backdrop-blur-[2px]">
+          <span className="text-2xl mb-1">🔒</span>
+          <span className="text-[10px] font-bold text-white uppercase tracking-wider text-center">Sign in to access</span>
+        </div>
+      )}
       <div className="flex justify-between items-center gap-3 mb-4">
         <div className="min-w-0">
           <h3 className="text-sm font-extrabold tracking-tight text-[var(--foreground)]">Today&apos;s Flight Path</h3>
@@ -25,18 +32,17 @@ export default function FlightPath({ todaysClasses, currentDayName }: FlightPath
           {todaysClasses.map((item, idx) => {
             const isActive = idx === 0;
             return (
-              <div 
-                key={item.id} 
-                className={`p-4 rounded-xl border transition-all cursor-pointer relative overflow-hidden ${
-                  isActive 
-                    ? "bg-[var(--accent-20)] border-[var(--accent-50)]" 
+              <div
+                key={item.id}
+                className={`p-4 rounded-xl border transition-all cursor-pointer relative overflow-hidden ${isActive
+                    ? "bg-[var(--accent-20)] border-[var(--accent-50)]"
                     : "bg-[var(--surface-top)] border-[var(--outline-dim)] hover:border-[var(--accent)]/30"
-                }`}
+                  }`}
               >
                 {isActive && (
                   <div className="absolute left-0 top-0 bottom-0 w-1 bg-[var(--accent)]" />
                 )}
-                
+
                 <div className="flex justify-between items-start gap-2">
                   <span className={`text-[10px] font-bold uppercase tracking-wider block mb-1.5 ${isActive ? "text-[var(--accent-hover)]" : "text-[var(--muted)]"}`}>
                     {item.startTime} — {item.endTime}
